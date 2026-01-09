@@ -3,1152 +3,2024 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Mina Universal Deployer</title>
-    <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.js"></script>
-    <script src="https://unpkg.com/o1js@1.9.0/dist/web/index.js"></script>
+    <title>My Money Factory - Privacy Protocol</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/ethers/5.7.2/ethers.umd.min.js"></script>
     <style>
-        :root {
-            --primary: #6366f1;
-            --success: #10b981;
-            --error: #ef4444;
-            --warning: #f59e0b;
-            --bg-dark: #0f172a;
-            --bg-card: #1e293b;
-            --border: #334155;
-            --text: #f1f5f9;
-        }
-        
         * { margin: 0; padding: 0; box-sizing: border-box; }
         
         body {
-            font-family: 'Inter', system-ui, sans-serif;
-            background: var(--bg-dark);
-            color: var(--text);
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: linear-gradient(135deg, #0a0a0f 0%, #1a0a2e 50%, #0a0a0f 100%);
+            color: #fff;
             min-height: 100vh;
-            padding: 20px;
+        }
+        
+        .bg-pattern {
+            position: fixed;
+            inset: 0;
+            background: 
+                radial-gradient(circle at 20% 80%, rgba(139, 92, 246, 0.08), transparent 50%),
+                radial-gradient(circle at 80% 20%, rgba(236, 72, 153, 0.08), transparent 50%);
+            pointer-events: none;
+        }
+        
+        .container { max-width: 1280px; margin: 0 auto; padding: 0 1rem; position: relative; z-index: 1; }
+        
+        header {
+            background: rgba(17, 17, 26, 0.3);
+            backdrop-filter: blur(20px);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            position: sticky;
+            top: 0;
+            z-index: 40;
+            padding: 0.75rem 0;
+        }
+        
+        .header-content { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem; }
+        .logo { display: flex; align-items: center; gap: 0.75rem; cursor: pointer; }
+        .logo-icon {
+            width: 40px; height: 40px;
+            background: linear-gradient(135deg, #9333ea, #ec4899);
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 4px 12px rgba(147, 51, 234, 0.5);
+            font-size: 1.25rem;
+        }
+        .logo-text h1 {
+            font-size: 1.25rem;
+            background: linear-gradient(90deg, #a78bfa, #ec4899, #60a5fa);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        .logo-text p { font-size: 0.625rem; color: #9ca3af; }
+        
+        .btn {
+            padding: 0.5rem 1.25rem;
+            border-radius: 12px;
+            font-weight: 600;
+            cursor: pointer;
+            border: none;
+            transition: all 0.3s;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            font-size: 0.875rem;
+        }
+        .btn-primary {
+            background: linear-gradient(90deg, #9333ea, #ec4899, #3b82f6);
+            color: #fff;
+            box-shadow: 0 4px 12px rgba(147, 51, 234, 0.3);
+        }
+        .btn-primary:hover { transform: scale(1.05); }
+        .btn-secondary {
+            background: rgba(55, 65, 81, 0.5);
+            color: #fff;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        .btn-success {
+            background: linear-gradient(90deg, #10b981, #059669);
+            color: #fff;
+        }
+        .btn:disabled { opacity: 0.5; cursor: not-allowed; }
+        
+        .wallet-info { display: flex; align-items: center; gap: 0.75rem; }
+        .wallet-badge {
+            background: rgba(31, 41, 55, 0.5);
+            backdrop-filter: blur(16px);
+            border-radius: 12px;
+            padding: 0.5rem 1rem;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        .wallet-badge p:first-child { font-size: 0.625rem; color: #9ca3af; }
+        .wallet-badge p:last-child { font-family: monospace; font-size: 0.75rem; font-weight: 600; }
+        
+        .disconnect-btn {
+            background: none;
+            border: none;
+            color: #9ca3af;
+            cursor: pointer;
+            padding: 0.5rem;
+            border-radius: 8px;
+            transition: all 0.3s;
+        }
+        .disconnect-btn:hover { color: #fff; background: rgba(55, 65, 81, 0.5); }
+        
+        .page { display: none; }
+        .page.active { display: block; }
+        
+        .hero-section {
+            text-align: center;
+            margin: 3rem auto;
+            max-width: 900px;
+            padding: 2rem;
+        }
+        
+        .hero-title {
+            font-size: 3rem;
+            font-weight: 800;
+            background: linear-gradient(90deg, #a78bfa, #ec4899, #60a5fa);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: 1rem;
+            line-height: 1.2;
+        }
+        
+        .hero-subtitle {
+            font-size: 1.25rem;
+            color: #d1d5db;
+            margin-bottom: 2rem;
             line-height: 1.6;
         }
         
-        .container {
-            max-width: 1400px;
-            margin: 0 auto;
+        .hero-features {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 1.5rem;
+            margin-top: 3rem;
         }
         
-        header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 30px;
-            padding-bottom: 20px;
-            border-bottom: 1px solid var(--border);
+        .feature-card {
+            background: rgba(31, 41, 55, 0.4);
+            backdrop-filter: blur(16px);
+            border-radius: 16px;
+            padding: 2rem;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            transition: all 0.5s;
         }
         
-        .logo {
-            display: flex;
-            align-items: center;
-            gap: 12px;
+        .feature-card:hover {
+            transform: translateY(-8px);
+            box-shadow: 0 12px 32px rgba(147, 51, 234, 0.3);
         }
         
-        h1 {
-            font-size: 2rem;
-            background: linear-gradient(90deg, var(--primary), #8b5cf6);
+        .feature-icon {
+            font-size: 3rem;
+            margin-bottom: 1rem;
+        }
+        
+        .feature-title {
+            font-size: 1.25rem;
+            font-weight: 700;
+            margin-bottom: 0.75rem;
+            background: linear-gradient(90deg, #a78bfa, #ec4899);
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
         }
         
-        .wallet-section {
-            display: flex;
-            gap: 10px;
+        .feature-description {
+            color: #9ca3af;
+            line-height: 1.6;
         }
         
-        .wallet-btn {
-            padding: 10px 20px;
-            background: var(--bg-card);
-            border: 1px solid var(--border);
-            border-radius: 8px;
-            color: var(--text);
-            cursor: pointer;
+        .cta-buttons {
+            display: flex;
+            gap: 1rem;
+            justify-content: center;
+            margin-top: 2rem;
+            flex-wrap: wrap;
+        }
+        
+        .btn-large {
+            padding: 1rem 2rem;
+            font-size: 1.125rem;
+        }
+        
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 1rem;
+            margin: 1.5rem 0;
+        }
+        .stat-card {
+            background: rgba(31, 41, 55, 0.4);
+            backdrop-filter: blur(16px);
+            border-radius: 16px;
+            padding: 1.25rem;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            transition: all 0.5s;
+        }
+        .stat-card:hover { transform: translateY(-4px); box-shadow: 0 8px 24px rgba(147, 51, 234, 0.2); }
+        .stat-header { display: flex; justify-content: space-between; align-items: flex-start; }
+        .stat-label { font-size: 0.75rem; color: #9ca3af; margin-bottom: 0.5rem; font-weight: 500; }
+        .stat-value { font-size: 1.5rem; font-weight: 700; }
+        .stat-icon {
+            width: 40px; height: 40px;
+            border-radius: 12px;
             display: flex;
             align-items: center;
-            gap: 8px;
-            transition: all 0.2s;
+            justify-content: center;
+            font-size: 1.25rem;
         }
         
-        .wallet-btn:hover {
-            border-color: var(--primary);
+        .tabs {
+            display: flex;
+            gap: 0.5rem;
+            background: rgba(17, 17, 26, 0.3);
+            backdrop-filter: blur(20px);
+            padding: 0.5rem;
+            border-radius: 24px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            margin-bottom: 2rem;
+            overflow-x: auto;
         }
-        
-        .wallet-btn:disabled {
-            opacity: 0.5;
-            cursor: not-allowed;
+        .tab {
+            flex: 1;
+            min-width: 120px;
+            padding: 0.75rem 1rem;
+            border-radius: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            border: none;
+            background: transparent;
+            color: #9ca3af;
+            transition: all 0.3s;
+            white-space: nowrap;
+            font-size: 0.875rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
         }
-        
-        .main-grid {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 30px;
-            min-height: 70vh;
-        }
-        
-        @media (max-width: 1024px) {
-            .main-grid { grid-template-columns: 1fr; }
+        .tab:hover { color: #fff; background: rgba(55, 65, 81, 0.4); }
+        .tab.active {
+            background: linear-gradient(90deg, #9333ea, #ec4899);
+            color: #fff;
+            transform: scale(1.02);
         }
         
         .card {
-            background: var(--bg-card);
-            border-radius: 12px;
-            border: 1px solid var(--border);
-            overflow: hidden;
+            background: rgba(31, 41, 55, 0.4);
+            backdrop-filter: blur(16px);
+            border-radius: 16px;
+            padding: 2rem;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            max-width: 768px;
+            margin: 0 auto;
         }
-        
-        .card-header {
-            padding: 20px;
-            border-bottom: 1px solid var(--border);
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-        
         .card-title {
+            font-size: 1.25rem;
+            font-weight: 700;
+            margin-bottom: 1.5rem;
             display: flex;
             align-items: center;
-            gap: 10px;
-            font-size: 1.2rem;
+            gap: 0.75rem;
         }
-        
-        .code-container {
-            position: relative;
-        }
-        
-        .code-toolbar {
-            position: absolute;
-            top: 10px;
-            right: 10px;
-            z-index: 10;
-            display: flex;
-            gap: 8px;
-        }
-        
-        .icon-btn {
-            width: 36px;
-            height: 36px;
-            background: rgba(30, 41, 59, 0.9);
-            border: 1px solid var(--border);
-            border-radius: 6px;
-            color: var(--text);
-            cursor: pointer;
+        .card-icon {
+            width: 40px; height: 40px;
+            border-radius: 12px;
             display: flex;
             align-items: center;
             justify-content: center;
-            transition: all 0.2s;
+            font-size: 1.25rem;
         }
         
-        .icon-btn:hover {
-            background: var(--primary);
-            border-color: var(--primary);
-        }
-        
-        .code-editor {
-            width: 100%;
-            height: 500px;
-            background: #1a1f36;
-            color: #e2e8f0;
-            font-family: 'Monaco', 'Consolas', monospace;
-            font-size: 14px;
-            line-height: 1.5;
-            padding: 20px;
-            border: none;
-            resize: none;
-            tab-size: 2;
-            white-space: pre;
-            overflow: auto;
-        }
-        
-        .console {
-            height: 300px;
-            overflow-y: auto;
-            padding: 20px;
-            background: #0f1525;
-            font-family: 'Monaco', 'Consolas', monospace;
-            font-size: 13px;
-        }
-        
-        .log {
-            margin-bottom: 8px;
-            padding: 6px 0;
-            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
-        }
-        
-        .log.info { color: #60a5fa; }
-        .log.success { color: var(--success); }
-        .log.error { color: var(--error); }
-        .log.warning { color: var(--warning); }
-        
-        .form-section {
-            padding: 20px;
-        }
-        
-        .form-group {
-            margin-bottom: 20px;
-        }
-        
-        label {
-            display: block;
-            margin-bottom: 8px;
-            color: #cbd5e1;
-            font-weight: 500;
-        }
-        
-        input, select, textarea {
-            width: 100%;
-            padding: 12px;
-            background: rgba(15, 23, 42, 0.7);
-            border: 1px solid var(--border);
-            border-radius: 8px;
-            color: var(--text);
-            font-size: 14px;
-        }
-        
-        textarea {
-            min-height: 100px;
-            resize: vertical;
-            font-family: 'Monaco', 'Consolas', monospace;
-        }
-        
-        .btn {
-            padding: 14px 28px;
-            background: var(--primary);
-            color: white;
-            border: none;
-            border-radius: 8px;
-            font-size: 16px;
-            font-weight: 600;
-            cursor: pointer;
+        .back-button {
             display: inline-flex;
             align-items: center;
-            justify-content: center;
-            gap: 10px;
-            transition: all 0.2s;
-        }
-        
-        .btn:hover:not(:disabled) {
-            transform: translateY(-2px);
-            box-shadow: 0 10px 25px rgba(99, 102, 241, 0.3);
-        }
-        
-        .btn:disabled {
-            opacity: 0.5;
-            cursor: not-allowed;
-        }
-        
-        .btn-full {
-            width: 100%;
-            margin-top: 20px;
-        }
-        
-        .btn-secondary {
-            background: transparent;
-            border: 1px solid var(--border);
-        }
-        
-        .network-selector {
-            display: flex;
-            gap: 10px;
-            margin-bottom: 20px;
-        }
-        
-        .network-btn {
-            flex: 1;
-            padding: 12px;
-            background: rgba(15, 23, 42, 0.5);
-            border: 1px solid var(--border);
-            border-radius: 8px;
-            color: #94a3b8;
+            gap: 0.5rem;
+            margin-bottom: 1.5rem;
+            color: #9ca3af;
             cursor: pointer;
-            text-align: center;
-            transition: all 0.2s;
+            transition: color 0.3s;
+        }
+        .back-button:hover { color: #fff; }
+        
+        .form-group { margin-bottom: 1.25rem; }
+        .form-label {
+            display: block;
+            color: #d1d5db;
+            margin-bottom: 0.5rem;
+            font-weight: 500;
+            font-size: 0.875rem;
+        }
+        .form-input, .form-select, .form-textarea {
+            width: 100%;
+            background: rgba(55, 65, 81, 0.5);
+            backdrop-filter: blur(16px);
+            color: #fff;
+            border-radius: 12px;
+            padding: 0.75rem;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            font-size: 0.875rem;
+            transition: all 0.3s;
+        }
+        .form-input:focus, .form-select:focus, .form-textarea:focus {
+            outline: none;
+            border-color: #9333ea;
+            box-shadow: 0 0 0 3px rgba(147, 51, 234, 0.2);
+        }
+        .form-textarea {
+            resize: vertical;
+            font-family: monospace;
+            font-size: 0.75rem;
+            min-height: 80px;
+        }
+        .form-input::placeholder { color: #6b7280; }
+        .form-hint {
+            font-size: 0.75rem;
+            color: #9ca3af;
+            margin-top: 0.5rem;
         }
         
-        .network-btn.active {
-            background: var(--primary);
-            color: white;
-            border-color: var(--primary);
+        .alert {
+            padding: 0.75rem;
+            border-radius: 12px;
+            margin-bottom: 1rem;
+            display: flex;
+            align-items: flex-start;
+            gap: 0.5rem;
+            font-size: 0.875rem;
+            line-height: 1.5;
+        }
+        .alert-icon { flex-shrink: 0; font-size: 1.125rem; }
+        .alert-info {
+            background: rgba(59, 130, 246, 0.1);
+            border: 1px solid rgba(59, 130, 246, 0.3);
+            color: #93c5fd;
+        }
+        .alert-warning {
+            background: rgba(251, 191, 36, 0.1);
+            border: 1px solid rgba(251, 191, 36, 0.3);
+            color: #fcd34d;
+        }
+        .alert-success {
+            background: rgba(16, 185, 129, 0.1);
+            border: 1px solid rgba(16, 185, 129, 0.3);
+            color: #6ee7b7;
+        }
+        .alert-error {
+            background: rgba(239, 68, 68, 0.1);
+            border: 1px solid rgba(239, 68, 68, 0.3);
+            color: #fca5a5;
         }
         
-        .status-bar {
+        .modal {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.6);
+            backdrop-filter: blur(16px);
+            z-index: 50;
+            align-items: center;
+            justify-content: center;
+            padding: 1rem;
+        }
+        .modal.active { display: flex; }
+        .modal-content {
+            background: linear-gradient(135deg, rgba(17, 17, 26, 0.95), rgba(26, 10, 46, 0.95));
+            backdrop-filter: blur(20px);
+            border-radius: 24px;
+            padding: 2rem;
+            max-width: 28rem;
+            width: 100%;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+        }
+        .modal-header {
             display: flex;
             justify-content: space-between;
-            padding: 15px 20px;
-            background: var(--bg-card);
-            border-top: 1px solid var(--border);
-            font-size: 13px;
-            color: #94a3b8;
-        }
-        
-        .status-item {
-            display: flex;
             align-items: center;
-            gap: 8px;
+            margin-bottom: 1rem;
         }
-        
-        .result-card {
-            background: rgba(16, 185, 129, 0.1);
-            border: 1px solid var(--success);
-            border-radius: 8px;
-            padding: 20px;
-            margin-top: 20px;
+        .modal-title {
+            font-size: 1.25rem;
+            font-weight: 700;
+            background: linear-gradient(90deg, #a78bfa, #ec4899, #60a5fa);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
         }
-        
-        .result-header {
-            display: flex;
-            align-items: center;
-            gap: 12px;
-            margin-bottom: 15px;
-        }
-        
-        .result-details {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 15px;
-            font-size: 14px;
-        }
-        
-        .detail-item {
-            background: rgba(15, 23, 42, 0.5);
-            padding: 12px;
-            border-radius: 6px;
-        }
-        
-        .detail-label {
-            color: #94a3b8;
-            font-size: 12px;
-            margin-bottom: 4px;
-        }
-        
-        .loader {
-            display: inline-block;
-            width: 20px;
-            height: 20px;
-            border: 3px solid rgba(255, 255, 255, 0.3);
-            border-radius: 50%;
-            border-top-color: var(--primary);
-            animation: spin 1s ease-in-out infinite;
-        }
-        
-        @keyframes spin {
-            to { transform: rotate(360deg); }
-        }
-        
-        .file-upload {
-            border: 2px dashed var(--border);
-            border-radius: 8px;
-            padding: 30px 20px;
-            text-align: center;
+        .close-btn {
+            background: none;
+            border: none;
+            color: #9ca3af;
             cursor: pointer;
-            margin-bottom: 20px;
-            transition: all 0.2s;
+            font-size: 1.5rem;
+            padding: 0;
+            width: 28px;
+            height: 28px;
+            transition: color 0.3s;
         }
+        .close-btn:hover { color: #fff; }
         
-        .file-upload:hover {
-            border-color: var(--primary);
-            background: rgba(99, 102, 241, 0.05);
-        }
-        
-        .toast {
-            position: fixed;
-            top: 20px;
-            right: 20px;
-            background: var(--bg-card);
-            border: 1px solid var(--border);
-            border-radius: 8px;
-            padding: 16px;
+        .wallet-option {
             display: flex;
             align-items: center;
-            gap: 12px;
-            min-width: 300px;
-            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.3);
-            animation: slideIn 0.3s ease;
-            z-index: 1000;
+            justify-content: space-between;
+            padding: 0.75rem 1rem;
+            background: linear-gradient(90deg, rgba(55, 65, 81, 0.5), rgba(55, 65, 81, 0.3));
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 12px;
+            cursor: pointer;
+            transition: all 0.3s;
+            margin-bottom: 0.5rem;
+        }
+        .wallet-option:hover {
+            background: linear-gradient(90deg, rgba(75, 85, 99, 0.5), rgba(75, 85, 99, 0.3));
+            border-color: rgba(255, 255, 255, 0.2);
+            transform: translateY(-2px);
+        }
+        .wallet-option-left {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+        .wallet-icon {
+            font-size: 1.5rem;
+            transition: transform 0.3s;
+        }
+        .wallet-option:hover .wallet-icon { transform: scale(1.1); }
+        .wallet-name {
+            color: #fff;
+            font-weight: 500;
+            font-size: 0.875rem;
+        }
+        .wallet-arrow {
+            color: #9ca3af;
+            transition: all 0.3s;
+        }
+        .wallet-option:hover .wallet-arrow {
+            color: #fff;
+            transform: translateX(4px);
         }
         
-        .toast.success { border-left: 4px solid var(--success); }
-        .toast.error { border-left: 4px solid var(--error); }
-        
+        .notification-container {
+            position: fixed;
+            top: 1rem;
+            right: 1rem;
+            z-index: 60;
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+            max-width: 24rem;
+        }
+        .notification {
+            padding: 0.75rem 1rem;
+            border-radius: 12px;
+            backdrop-filter: blur(16px);
+            border: 1px solid;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            font-size: 0.875rem;
+            font-weight: 500;
+            animation: slideIn 0.3s ease-out;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+        }
         @keyframes slideIn {
             from { transform: translateX(100%); opacity: 0; }
             to { transform: translateX(0); opacity: 1; }
         }
+        .notification-success {
+            background: rgba(16, 185, 129, 0.9);
+            border-color: rgba(16, 185, 129, 0.5);
+            color: #fff;
+        }
+        .notification-error {
+            background: rgba(239, 68, 68, 0.9);
+            border-color: rgba(239, 68, 68, 0.5);
+            color: #fff;
+        }
+        .notification-warning {
+            background: rgba(251, 191, 36, 0.9);
+            border-color: rgba(251, 191, 36, 0.5);
+            color: #fff;
+        }
+        .notification-info {
+            background: rgba(59, 130, 246, 0.9);
+            border-color: rgba(59, 130, 246, 0.5);
+            color: #fff;
+        }
         
-        .tab-group {
+        .mixer-grid {
+            display: grid;
+            gap: 1rem;
+            margin-top: 1rem;
+        }
+        .mixer-card {
+            background: rgba(31, 41, 55, 0.4);
+            backdrop-filter: blur(16px);
+            border-radius: 16px;
+            padding: 1.25rem;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            transition: all 0.5s;
+        }
+        .mixer-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 24px rgba(147, 51, 234, 0.2);
+        }
+        .mixer-header {
             display: flex;
-            gap: 5px;
-            margin-bottom: 15px;
-            border-bottom: 1px solid var(--border);
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 1rem;
         }
-        
-        .tab-btn {
-            padding: 10px 20px;
-            background: transparent;
-            border: none;
-            color: #94a3b8;
-            cursor: pointer;
-            border-bottom: 2px solid transparent;
-            transition: all 0.2s;
+        .mixer-title {
+            font-size: 1.125rem;
+            font-weight: 700;
+            margin-bottom: 0.25rem;
         }
-        
-        .tab-btn.active {
-            color: var(--primary);
-            border-bottom-color: var(--primary);
-        }
-        
-        .tab-content {
-            display: none;
-        }
-        
-        .tab-content.active {
-            display: block;
-        }
-        
-        .file-info {
-            background: rgba(99, 102, 241, 0.1);
-            border: 1px solid var(--primary);
+        .mixer-address {
+            font-family: monospace;
+            font-size: 0.75rem;
+            color: #9ca3af;
+            background: rgba(55, 65, 81, 0.5);
+            padding: 0.25rem 0.5rem;
             border-radius: 6px;
-            padding: 12px;
-            margin-top: 10px;
+            display: inline-block;
+        }
+        .mixer-status {
+            padding: 0.5rem 0.75rem;
+            border-radius: 12px;
+            font-size: 0.75rem;
+            font-weight: 600;
+        }
+        .status-active {
+            background: linear-gradient(90deg, #10b981, #059669);
+            color: #fff;
+        }
+        .status-inactive {
+            background: linear-gradient(90deg, #ef4444, #dc2626);
+            color: #fff;
+        }
+        .mixer-stats {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 0.75rem;
+            margin-bottom: 1rem;
+        }
+        .mixer-stat {
+            background: rgba(55, 65, 81, 0.3);
+            padding: 0.75rem;
+            border-radius: 12px;
+            border: 1px solid rgba(255, 255, 255, 0.05);
+        }
+        .mixer-stat-label {
+            font-size: 0.75rem;
+            color: #9ca3af;
+            margin-bottom: 0.25rem;
+        }
+        .mixer-stat-value {
+            font-size: 0.875rem;
+            font-weight: 600;
+        }
+        .mixer-actions {
+            display: flex;
+            gap: 0.5rem;
+            flex-wrap: wrap;
+        }
+        .btn-small {
+            padding: 0.5rem 0.75rem;
+            font-size: 0.75rem;
+            border-radius: 8px;
+        }
+        
+        .note-display {
+            background: rgba(17, 24, 39, 0.5);
+            border-radius: 12px;
+            padding: 0.75rem;
+            margin-top: 0.5rem;
+            word-break: break-all;
+            font-family: monospace;
+            font-size: 0.75rem;
+            color: #fff;
+        }
+        
+        .checkbox-container {
             display: flex;
             align-items: center;
+            gap: 0.75rem;
+            padding: 0.75rem;
+            background: rgba(55, 65, 81, 0.3);
+            border-radius: 12px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        .checkbox-container:hover {
+            background: rgba(75, 85, 99, 0.4);
+        }
+        .checkbox {
+            width: 18px;
+            height: 18px;
+            cursor: pointer;
+        }
+        .checkbox-label {
+            color: #d1d5db;
+            cursor: pointer;
+            flex: 1;
+            font-weight: 500;
+            font-size: 0.875rem;
+        }
+        
+        .loading-spinner {
+            display: inline-block;
+            width: 1rem;
+            height: 1rem;
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            border-top-color: #fff;
+            border-radius: 50%;
+            animation: spin 0.6s linear infinite;
+        }
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+        
+        .empty-state {
+            text-align: center;
+            padding: 3rem 1rem;
+            background: rgba(31, 41, 55, 0.4);
+            backdrop-filter: blur(16px);
+            border-radius: 16px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        .empty-icon {
+            width: 64px;
+            height: 64px;
+            background: linear-gradient(135deg, rgba(75, 85, 99, 0.3), rgba(55, 65, 81, 0.3));
+            border-radius: 16px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 1rem;
+            font-size: 2rem;
+        }
+        .empty-title {
+            font-weight: 600;
+            margin-bottom: 0.5rem;
+            color: #9ca3af;
+        }
+        .empty-description {
+            font-size: 0.875rem;
+            color: #6b7280;
+        }
+        
+        footer {
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
+            margin-top: 4rem;
+            padding: 1.5rem 0;
+        }
+        .footer-content {
+            display: flex;
             justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 1rem;
+            font-size: 0.875rem;
+            color: #9ca3af;
+        }
+        .footer-links {
+            display: flex;
+            gap: 1.5rem;
+        }
+        .footer-links a {
+            color: #9ca3af;
+            text-decoration: none;
+            transition: color 0.3s;
+        }
+        .footer-links a:hover {
+            color: #fff;
+        }
+        
+        .hidden { display: none !important; }
+        
+        @media (max-width: 768px) {
+            .hero-title { font-size: 2rem; }
+            .hero-subtitle { font-size: 1rem; }
+            .stats-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+            .tabs {
+                overflow-x: auto;
+                -webkit-overflow-scrolling: touch;
+            }
+            .tab {
+                font-size: 0.75rem;
+                padding: 0.625rem 0.875rem;
+            }
+            .card {
+                padding: 1.5rem;
+            }
+            .mixer-stats {
+                grid-template-columns: 1fr;
+            }
+        }
+        
+        @media (max-width: 640px) {
+            .stats-grid {
+                grid-template-columns: 1fr;
+            }
+            .header-content {
+                flex-direction: column;
+                align-items: stretch;
+            }
+            .wallet-info {
+                flex-direction: column;
+                align-items: stretch;
+            }
+            .footer-content {
+                flex-direction: column;
+                text-align: center;
+            }
+            .cta-buttons {
+                flex-direction: column;
+            }
+            .btn-large {
+                width: 100%;
+            }
         }
     </style>
 </head>
 <body>
-    <div class="container">
-        <header>
-            <div class="logo">
-                <i data-lucide="rocket"></i>
-                <h1>Mina Universal Deployer</h1>
+    <div class="bg-pattern"></div>
+    
+    <header>
+        <div class="container">
+            <div class="header-content">
+                <div class="logo" onclick="navigateToHome()">
+                    <div class="logo-icon">🛡️</div>
+                    <div class="logo-text">
+                        <h1>My Money Factory</h1>
+                        <p>Privacy Protocol</p>
+                    </div>
+                </div>
+                
+                <div class="wallet-info" id="walletSection">
+                    <button class="btn btn-primary" id="connectBtn" onclick="openWalletModal()">
+                        💼 Connect Wallet
+                    </button>
+                    
+                    <div class="hidden" id="connectedSection">
+                        <div class="wallet-badge">
+                            <p>Connected</p>
+                            <p id="accountDisplay"></p>
+                        </div>
+                        <button class="disconnect-btn" onclick="disconnectWallet()" title="Disconnect">
+                            ✖️
+                        </button>
+                    </div>
+                </div>
             </div>
-            <div class="wallet-section">
-                <button class="wallet-btn" onclick="connectWallet()" id="connectBtn">
-                    <i data-lucide="wallet"></i>
-                    <span id="walletStatus">Connect Wallet</span>
-                </button>
-                <button class="wallet-btn" onclick="disconnectWallet()" id="disconnectBtn" style="display: none;">
-                    <i data-lucide="log-out"></i>
-                </button>
-            </div>
-        </header>
-
-        <div class="network-selector">
-            <button class="network-btn active" onclick="setNetwork('devnet')" data-network="devnet">
-                <i data-lucide="test-tube"></i> Devnet
-            </button>
-            <button class="network-btn" onclick="setNetwork('testnet')" data-network="testnet">
-                <i data-lucide="shield"></i> Testnet
-            </button>
-            <button class="network-btn" onclick="setNetwork('mainnet')" data-network="mainnet">
-                <i data-lucide="globe"></i> Mainnet
-            </button>
         </div>
-
-        <div class="main-grid">
-            <div class="card">
-                <div class="card-header">
-                    <div class="card-title">
-                        <i data-lucide="code"></i>
-                        Contract Source
-                    </div>
-                    <div class="code-toolbar">
-                        <button class="icon-btn" onclick="formatCode()" title="Format code">
-                            <i data-lucide="align-left"></i>
-                        </button>
-                        <button class="icon-btn" onclick="clearCode()" title="Clear editor">
-                            <i data-lucide="trash-2"></i>
-                        </button>
-                        <button class="icon-btn" onclick="saveCode()" title="Save to file">
-                            <i data-lucide="download"></i>
-                        </button>
-                    </div>
-                </div>
+    </header>
+    
+    <!-- HOME PAGE -->
+    <div id="homePage" class="page active">
+        <main class="container" style="padding-top: 2rem; padding-bottom: 2rem;">
+            <div class="hero-section">
+                <h2 class="hero-title">
+                    Your Personal Privacy Vault on Ethereum
+                </h2>
+                <p class="hero-subtitle">
+                    Deploy your own mixer contract. Pay once, own forever. Complete anonymity with zero-knowledge proofs.
+                </p>
                 
-                <div class="form-section" style="padding-bottom: 0;">
-                    <div class="tab-group">
-                        <button class="tab-btn active" onclick="switchTab('write')" data-tab="write">Write Code</button>
-                        <button class="tab-btn" onclick="switchTab('upload')" data-tab="upload">Upload Contract</button>
-                    </div>
-                </div>
-                
-                <div class="code-container tab-content active" id="writeTab">
-                    <textarea id="codeEditor" class="code-editor" spellcheck="false">import { SmartContract, method, state, State, Field, PublicKey } from 'o1js';
-
-export class MyContract extends SmartContract {
-  @state(Field) value = State();
-  @state(PublicKey) admin = State();
-  
-  init() {
-    super.init();
-    this.value.set(Field(0));
-    this.admin.set(this.sender.getAndRequireSignatureV2());
-  }
-  
-  @method async update(newValue: Field) {
-    const admin = this.admin.getAndRequireEquals();
-    const sender = this.sender.getAndRequireSignatureV2();
-    admin.assertEquals(sender);
-    this.value.set(newValue);
-  }
-}</textarea>
-                </div>
-                
-                <div class="tab-content" id="uploadTab" style="padding: 20px;">
-                    <div class="file-upload" onclick="document.getElementById('fileInput').click()">
-                        <i data-lucide="upload-cloud" style="width: 48px; height: 48px; margin: 0 auto 15px; color: var(--primary);"></i>
-                        <p style="font-size: 16px; margin-bottom: 5px;">Click to upload contract</p>
-                        <p style="font-size: 13px; color: #94a3b8;">Supports .js, .ts, or pre-compiled build.json</p>
-                    </div>
-                    <input type="file" id="fileInput" accept=".js,.ts,.json" style="display: none;" onchange="handleFileUpload(event)">
-                    <div id="fileInfo" style="display: none;"></div>
+                <div class="cta-buttons">
+                    <button class="btn btn-primary btn-large" onclick="navigateToApp()">
+                        🚀 Launch App
+                    </button>
+                    <button class="btn btn-secondary btn-large" onclick="scrollToFeatures()">
+                        📖 Learn More
+                    </button>
                 </div>
             </div>
-
-            <div class="card">
-                <div class="card-header">
-                    <div class="card-title">
-                        <i data-lucide="settings"></i>
-                        Deployment Configuration
+            
+            <div class="hero-features" id="featuresSection">
+                <div class="feature-card">
+                    <div class="feature-icon">🔒</div>
+                    <div class="feature-title">Own Your Vault</div>
+                    <div class="feature-description">
+                        Deploy a personal mixer contract that you control. It's yours forever, no recurring fees.
                     </div>
                 </div>
                 
-                <div class="form-section">
-                    <div class="form-group">
-                        <label><i data-lucide="key"></i> Deployer Private Key (Optional)</label>
-                        <input type="password" id="privateKey" placeholder="Leave empty to use connected wallet">
-                        <small style="color: #94a3b8; display: block; margin-top: 5px;">
-                            Connect wallet above for secure signing or enter private key
-                        </small>
+                <div class="feature-card">
+                    <div class="feature-icon">🎭</div>
+                    <div class="feature-title">Total Privacy</div>
+                    <div class="feature-description">
+                        Zero-knowledge proofs ensure your deposits and withdrawals are completely unlinkable.
+                    </div>
+                </div>
+                
+                <div class="feature-card">
+                    <div class="feature-icon">💎</div>
+                    <div class="feature-title">One-Time Fee</div>
+                    <div class="feature-description">
+                        Pay 1 ETH deployment fee once, then use your vault unlimited times with no additional costs.
+                    </div>
+                </div>
+                
+                <div class="feature-card">
+                    <div class="feature-icon">⚡</div>
+                    <div class="feature-title">Fast & Secure</div>
+                    <div class="feature-description">
+                        Built on Ethereum with battle-tested cryptography. Your funds are always safe.
+                    </div>
+                </div>
+                
+                <div class="feature-card">
+                    <div class="feature-icon">🌐</div>
+                    <div class="feature-title">Shared Anonymity</div>
+                    <div class="feature-description">
+                        All mixers share one Merkle tree for maximum anonymity set and privacy protection.
+                    </div>
+                </div>
+                
+                <div class="feature-card">
+                    <div class="feature-icon">🔐</div>
+                    <div class="feature-title">Non-Custodial</div>
+                    <div class="feature-description">
+                        You control your funds at all times. Only you have the withdrawal keys.
+                    </div>
+                </div>
+            </div>
+            
+            <div style="text-align: center; margin-top: 4rem;">
+                <h3 style="font-size: 2rem; font-weight: 700; margin-bottom: 1rem; background: linear-gradient(90deg, #a78bfa, #ec4899); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">
+                    How It Works
+                </h3>
+                <div style="max-width: 800px; margin: 0 auto; display: grid; gap: 2rem; margin-top: 2rem;">
+                    <div style="display: flex; align-items: center; gap: 1.5rem; text-align: left;">
+                        <div style="flex-shrink: 0; width: 60px; height: 60px; background: linear-gradient(135deg, #9333ea, #ec4899); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 1.5rem; font-weight: 700;">1</div>
+                        <div>
+                            <div style="font-weight: 700; font-size: 1.125rem; margin-bottom: 0.5rem;">Deploy Your Vault</div>
+                            <div style="color: #9ca3af;">Pay 1 ETH to deploy your personal mixer contract to Ethereum.</div>
+                        </div>
                     </div>
                     
-                    <div class="form-group">
-                        <label><i data-lucide="zap"></i> Fee (MINA)</label>
-                        <input type="number" id="fee" value="0.1" step="0.01" min="0.01">
+                    <div style="display: flex; align-items: center; gap: 1.5rem; text-align: left;">
+                        <div style="flex-shrink: 0; width: 60px; height: 60px; background: linear-gradient(135deg, #10b981, #059669); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 1.5rem; font-weight: 700;">2</div>
+                        <div>
+                            <div style="font-weight: 700; font-size: 1.125rem; margin-bottom: 0.5rem;">Make Deposits</div>
+                            <div style="color: #9ca3af;">Deposit funds and receive a secret withdrawal note. Save it securely!</div>
+                        </div>
                     </div>
                     
-                    <div class="form-group">
-                        <label><i data-lucide="message-square"></i> Transaction Memo (Optional)</label>
-                        <input type="text" id="memo" value="" placeholder="Deployed via Mina Universal Deployer">
+                    <div style="display: flex; align-items: center; gap: 1.5rem; text-align: left;">
+                        <div style="flex-shrink: 0; width: 60px; height: 60px; background: linear-gradient(135deg, #3b82f6, #2563eb); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 1.5rem; font-weight: 700;">3</div>
+                        <div>
+                            <div style="font-weight: 700; font-size: 1.125rem; margin-bottom: 0.5rem;">Withdraw Anonymously</div>
+                            <div style="color: #9ca3af;">Use your note to withdraw to any address. The link is cryptographically broken.</div>
+                        </div>
                     </div>
-                    
-                    <button class="btn btn-full" onclick="deployContract()" id="deployBtn">
-                        <i data-lucide="rocket"></i> Deploy Contract
+                </div>
+            </div>
+        </main>
+    </div>
+    
+    <!-- APP PAGE -->
+    <div id="appPage" class="page">
+        <main class="container" style="padding-top: 2rem; padding-bottom: 2rem;">
+            <div class="back-button" onclick="navigateToHome()">
+                ← Back to Home
+            </div>
+            
+            <!-- Stats Grid -->
+            <div class="stats-grid" id="statsGrid">
+                <div class="stat-card">
+                    <div class="stat-header">
+                        <div>
+                            <div class="stat-label">Total Mixers</div>
+                            <div class="stat-value" id="totalMixers">0</div>
+                        </div>
+                        <div class="stat-icon" style="background: linear-gradient(135deg, #9333ea, #ec4899);">👥</div>
+                    </div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-header">
+                        <div>
+                            <div class="stat-label">Total Fees Collected</div>
+                            <div class="stat-value" id="totalFees">0 ETH</div>
+                        </div>
+                        <div class="stat-icon" style="background: linear-gradient(135deg, #10b981, #059669);">💰</div>
+                    </div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-header">
+                        <div>
+                            <div class="stat-label">Global Nullifiers</div>
+                            <div class="stat-value" id="totalNullifiers">0</div>
+                        </div>
+                        <div class="stat-icon" style="background: linear-gradient(135deg, #3b82f6, #2563eb);">🔒</div>
+                    </div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-header">
+                        <div>
+                            <div class="stat-label">Your Balance</div>
+                            <div class="stat-value" id="userBalance">0 ETH</div>
+                        </div>
+                        <div class="stat-icon" style="background: linear-gradient(135deg, #f59e0b, #d97706);">✨</div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Tabs -->
+            <div class="tabs">
+                <button class="tab active" onclick="switchTab('deploy')">
+                    ⚡ Deploy Mixer
+                </button>
+                <button class="tab" onclick="switchTab('deposit')">
+                    🛡️ Deposit
+                </button>
+                <button class="tab" onclick="switchTab('withdraw')">
+                    💵 Withdraw
+                </button>
+                <button class="tab" onclick="switchTab('mixers')">
+                    🔐 My Mixers
+                </button>
+            </div>
+            
+            <!-- Deploy Tab -->
+            <div id="deployTab" class="card">
+                <h3 class="card-title">
+                    <div class="card-icon" style="background: linear-gradient(135deg, #9333ea, #ec4899);">⚡</div>
+                    Deploy Your Privacy Mixer
+                </h3>
+                
+                <div class="alert alert-info" style="margin-bottom: 1.5rem;">
+                    <span class="alert-icon">💡</span>
+                    <div>
+                        <strong>What You Get:</strong>
+                        <p style="margin-top: 0.5rem;">Pay 1 ETH once to deploy your personal mixer contract. You get your own liquidity pool with isolated balances. All mixers share the same verifier, Merkle tree, and nullifier registry for maximum privacy.</p>
+                    </div>
+                </div>
+                
+                <div class="alert alert-warning">
+                    <span class="alert-icon">💰</span>
+                    <div>
+                        <strong>Deployment Fee: 1 ETH</strong>
+                        <p style="margin-top: 0.5rem;">One-time payment to the factory admin. After deployment, you own your mixer forever with no recurring fees (only gas costs).</p>
+                    </div>
+                </div>
+                
+                <button class="btn btn-primary" style="width: 100%;" onclick="deployMixer()" id="deployBtn">
+                    ✨ Deploy My Mixer (1 ETH)
+                </button>
+            </div>
+            
+            <!-- Deposit Tab -->
+            <div id="depositTab" class="card hidden">
+                <h3 class="card-title">
+                    <div class="card-icon" style="background: linear-gradient(135deg, #10b981, #059669);">🛡️</div>
+                    Deposit Into Your Mixer
+                </h3>
+                
+                <div class="alert alert-info" style="margin-bottom: 1.5rem;">
+                    <span class="alert-icon">🔐</span>
+                    <div>
+                        <strong>How Deposits Work:</strong>
+                        <p style="margin-top: 0.5rem;">Your commitment goes to the SHARED Merkle tree (bigger anonymity set). You'll get a secret note. The nullifier is checked GLOBALLY across all mixers to prevent double-spending.</p>
+                    </div>
+                </div>
+                
+                <div class="form-group">
+                    <label class="form-label">Select Your Mixer</label>
+                    <select id="depositMixer" class="form-select">
+                        <option value="">Choose your mixer...</option>
+                    </select>
+                </div>
+                
+                <div id="noteDisplay" class="hidden">
+                    <div class="alert alert-success">
+                        <span class="alert-icon">📄</span>
+                        <div style="flex: 1;">
+                            <strong>Your Withdrawal Note</strong>
+                            <p style="margin-top: 0.25rem;">This note is required to withdraw your funds. Save it securely!</p>
+                            <div class="note-display" id="noteString"></div>
+                            <div style="display: flex; gap: 0.5rem; margin-top: 0.75rem;">
+                                <button class="btn btn-secondary btn-small" onclick="copyNote()">📋 Copy</button>
+                                <button class="btn btn-secondary btn-small" onclick="downloadNote()">💾 Download</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="alert alert-warning">
+                    <span class="alert-icon">⚠️</span>
+                    <div>
+                        <strong>CRITICAL: Save Your Note</strong>
+                        <p style="margin-top: 0.25rem;">Your note contains the secret and nullifier needed to withdraw. Without it, your funds are PERMANENTLY LOST. Save it in multiple secure locations.</p>
+                    </div>
+                </div>
+                
+                <button class="btn btn-success" style="width: 100%;" onclick="makeDeposit()" id="depositBtn">
+                    🛡️ Make Private Deposit
+                </button>
+            </div>
+            
+            <!-- Withdraw Tab -->
+            <div id="withdrawTab" class="card hidden">
+                <h3 class="card-title">
+                    <div class="card-icon" style="background: linear-gradient(135deg, #3b82f6, #2563eb);">💵</div>
+                    Withdraw Funds
+                </h3>
+                
+                <div class="alert alert-info" style="margin-bottom: 1.5rem;">
+                    <span class="alert-icon">🔒</span>
+                    <div>
+                        <strong>Global Nullifier Check:</strong>
+                        <p style="margin-top: 0.5rem;">Your nullifier is checked against the SHARED nullifier registry. Once spent, it cannot be used again across ANY mixer in the system.</p>
+                    </div>
+                </div>
+                
+                <div class="form-group">
+                    <label class="form-label">Withdrawal Note</label>
+                    <textarea id="withdrawNote" class="form-textarea" rows="3" placeholder="Paste your withdrawal note here (mymoney-...)"></textarea>
+                    <div style="margin-top: 0.5rem;">
+                        <label class="btn btn-secondary btn-small" style="cursor: pointer;">
+                            📤 Upload Note File
+                            <input type="file" accept=".txt" onchange="loadNoteFile(event)" style="display: none;">
+                        </label>
+                    </div>
+                </div>
+                
+                <div id="parsedNoteDisplay" class="hidden">
+                    <div class="alert alert-info">
+                        <span class="alert-icon">✨</span>
+                        <div style="flex: 1;">
+                            <strong>Parsed Note Details</strong>
+                            <div style="margin-top: 0.5rem; font-size: 0.75rem;">
+                                <div style="display: flex; justify-content: space-between; margin-bottom: 0.25rem;">
+                                    <span style="color: #9ca3af;">Amount:</span>
+                                    <strong id="parsedAmount"></strong>
+                                </div>
+                                <div style="display: flex; justify-content: space-between; margin-bottom: 0.25rem;">
+                                    <span style="color: #9ca3af;">Mixer:</span>
+                                    <span style="font-family: monospace;" id="parsedMixer"></span>
+                                </div>
+                                <div style="display: flex; justify-content: space-between;">
+                                    <span style="color: #9ca3af;">Chain ID:</span>
+                                    <span id="parsedChain"></span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="form-group">
+                    <label class="form-label">Recipient Address</label>
+                    <input type="text" id="recipient" class="form-input" placeholder="0x... (where to send the withdrawn funds)" style="font-family: monospace;">
+                </div>
+                
+                <div class="checkbox-container" onclick="toggleRelayer()">
+                    <input type="checkbox" id="useRelayer" class="checkbox">
+                    <label class="checkbox-label" for="useRelayer">
+                        Use Relayer (Maximum Privacy - hides recipient link)
+                    </label>
+                </div>
+                
+                <div id="relayerFeeSection" class="form-group hidden">
+                    <label class="form-label">Relayer Fee (ETH)</label>
+                    <input type="number" id="relayerFee" class="form-input" value="0.01" step="0.001" min="0.001">
+                </div>
+                
+                <div id="proofGenerating" class="alert alert-info hidden">
+                    <span class="alert-icon"><div class="loading-spinner"></div></span>
+                    <div>
+                        <strong>Generating zero-knowledge proof...</strong> Please wait.
+                    </div>
+                </div>
+                
+                <div class="alert alert-error">
+                    <span class="alert-icon">⚠️</span>
+                    <div>
+                        <strong>Warning</strong>
+                        <p style="margin-top: 0.25rem;">Once withdrawn, this note cannot be used again (nullifier marked globally). Verify the recipient address is correct.</p>
+                    </div>
+                </div>
+                
+                <button class="btn btn-primary" style="width: 100%; background: linear-gradient(90deg, #3b82f6, #2563eb);" onclick="withdrawFunds()" id="withdrawBtn">
+                    💵 Withdraw Funds Anonymously
+                </button>
+            </div>
+            
+            <!-- My Mixers Tab -->
+            <div id="mixersTab" class="hidden">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+                    <h3 class="card-title" style="margin-bottom: 0;">
+                        <div class="card-icon" style="background: linear-gradient(135deg, #6366f1, #8b5cf6);">🔐</div>
+                        My Mixers
+                    </h3>
+                    <button class="btn btn-secondary" onclick="refreshMixers()" id="refreshBtn">
+                        🔄 Refresh
                     </button>
                 </div>
                 
-                <div class="card-header">
-                    <div class="card-title">
-                        <i data-lucide="terminal"></i>
-                        Deployment Console
-                    </div>
-                    <div style="display: flex; gap: 8px;">
-                        <button class="icon-btn" onclick="clearConsole()">
-                            <i data-lucide="trash-2"></i>
-                        </button>
-                        <button class="icon-btn" onclick="exportLogs()">
-                            <i data-lucide="download"></i>
-                        </button>
+                <div class="alert alert-info" style="margin-bottom: 1.5rem;">
+                    <span class="alert-icon">📊</span>
+                    <div>
+                        <strong>Your Personal Mixers:</strong>
+                        <p style="margin-top: 0.5rem;">Each mixer you deploy is YOUR contract. You control the liquidity pool. All mixers share the same verifier and Merkle tree for stronger anonymity.</p>
                     </div>
                 </div>
-                <div class="console" id="consoleOutput">
-                    <div class="log info">System initialized</div>
-                    <div class="log info">Ready to deploy contracts to Mina Protocol</div>
+                
+                <div id="mixersList">
+                    <div class="empty-state">
+                        <div class="empty-icon">🔐</div>
+                        <div class="empty-title">No mixers deployed yet</div>
+                        <div class="empty-description">Deploy your first privacy mixer to get started. Pay 1 ETH once, own forever!</div>
+                    </div>
+                </div>
+                
+                <div id="savedNotes" class="hidden" style="margin-top: 2rem;">
+                    <h4 style="font-size: 1.125rem; font-weight: 700; margin-bottom: 0.75rem; display: flex; align-items: center; gap: 0.5rem;">
+                        📄 Saved Notes (<span id="notesCount">0</span>)
+                    </h4>
+                    <div class="alert alert-success">
+                        <span class="alert-icon">✅</span>
+                        <div>
+                            You have <strong id="notesCountText">0</strong> withdrawal note(s) saved locally. Keep these secure!
+                            <div style="margin-top: 0.25rem; font-size: 0.75rem;">
+                                Notes are stored in your browser's local storage only.
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+    
+    <footer>
+        <div class="container">
+            <div class="footer-content">
+                <div>© 2025 My Money Factory. Privacy-preserving protocol.</div>
+                <div class="footer-links">
+                    <a href="#" onclick="return false;">Documentation</a>
+                    <a href="#" onclick="return false;">GitHub</a>
+                    <a href="#" onclick="return false;">Support</a>
                 </div>
             </div>
         </div>
-
-        <div class="card" style="margin-top: 30px; display: none;" id="resultsPanel">
-            <div class="card-header">
-                <div class="card-title">
-                    <i data-lucide="check-circle"></i>
-                    Deployment Results
+    </footer>
+    
+    <!-- Wallet Connect Modal -->
+    <div id="walletModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 class="modal-title">Connect Wallet</h3>
+                <button class="close-btn" onclick="closeWalletModal()">×</button>
+            </div>
+            <p style="color: #9ca3af; font-size: 0.875rem; margin-bottom: 1.5rem;">Choose your preferred wallet provider</p>
+            
+            <button class="wallet-option" onclick="connectWallet('metamask')" id="metamaskBtn">
+                <div class="wallet-option-left">
+                    <span class="wallet-icon">🦊</span>
+                    <span class="wallet-name">MetaMask</span>
                 </div>
-            </div>
-            <div class="form-section" id="resultsContent"></div>
-        </div>
-
-        <div class="status-bar">
-            <div class="status-item">
-                <i data-lucide="cpu"></i>
-                <span>Status: <span id="statusText">Ready</span></span>
-            </div>
-            <div class="status-item">
-                <i data-lucide="network"></i>
-                <span>Network: <span id="currentNetwork">Devnet</span></span>
-            </div>
-            <div class="status-item">
-                <i data-lucide="clock"></i>
-                <span id="currentTime">--:--:--</span>
-            </div>
-            <div class="status-item">
-                <i data-lucide="code"></i>
-                <span>o1js v1.9.0</span>
-            </div>
+                <span class="wallet-arrow">→</span>
+            </button>
+            
+            <button class="wallet-option" onclick="connectWallet('walletconnect')" id="walletconnectBtn">
+                <div class="wallet-option-left">
+                    <span class="wallet-icon">🔗</span>
+                    <span class="wallet-name">WalletConnect</span>
+                </div>
+                <span class="wallet-arrow">→</span>
+            </button>
+            
+            <button class="wallet-option" onclick="connectWallet('coinbase')" id="coinbaseBtn">
+                <div class="wallet-option-left">
+                    <span class="wallet-icon">🔶</span>
+                    <span class="wallet-name">Coinbase Wallet</span>
+                </div>
+                <span class="wallet-arrow">→</span>
+            </button>
+            
+            <button class="wallet-option" onclick="connectWallet('trust')" id="trustBtn">
+                <div class="wallet-option-left">
+                    <span class="wallet-icon">💎</span>
+                    <span class="wallet-name">Trust Wallet</span>
+                </div>
+                <span class="wallet-arrow">→</span>
+            </button>
         </div>
     </div>
-
+    
+    <!-- Notifications Container -->
+    <div class="notification-container" id="notifications"></div>
+    
     <script>
-        lucide.createIcons();
+        // CONTRACT ADDRESSES - UPDATE THESE AFTER DEPLOYMENT
+        const FACTORY_ADDRESS = '0x0000000000000000000000000000000000000000'; // PrivacyMixerFactory
+        const VERIFIER_ADDRESS = '0x0000000000000000000000000000000000000000'; // MixerVerifier
+        const MERKLE_TREE_ADDRESS = '0x0000000000000000000000000000000000000000'; // MerkleTree
+        const NULLIFIER_REGISTRY_ADDRESS = '0x0000000000000000000000000000000000000000'; // SharedNullifierRegistry
         
-        let currentNetwork = 'devnet';
-        let connectedWallet = null;
-        let deploymentHistory = [];
-        let logs = [];
-        let uploadedContract = null;
-        let uploadedBuild = null;
-        let currentTab = 'write';
+        const FACTORY_ABI = [
+            "function deployMyMixer() external payable returns (address)",
+            "function userMixerAddress(address) external view returns (address)",
+            "function getUserMixerInfo(address) external view returns (bool, address, uint256, uint256)",
+            "function getAdminStats() external view returns (uint256, uint256, uint256, uint256, address)",
+            "function DEPLOYMENT_FEE() external view returns (uint256)",
+            "event MixerDeployedForUser(address indexed user, address indexed mixerAddress, uint256 deploymentFee, uint256 timestamp)"
+        ];
         
-        const NETWORK_CONFIG = {
-            devnet: {
-                name: 'Devnet',
-                networkID: 'mina:devnet',
-                graphql: 'https://api.minascan.io/node/devnet/v1/graphql',
-                explorer: 'https://minascan.io/devnet'
-            },
-            testnet: {
-                name: 'Testnet',
-                networkID: 'mina:testnet',
-                graphql: 'https://api.minascan.io/node/testworld/v1/graphql',
-                explorer: 'https://minascan.io/testworld'
-            },
-            mainnet: {
-                name: 'Mainnet',
-                networkID: 'mina:mainnet',
-                graphql: 'https://api.minascan.io/node/mainnet/v1/graphql',
-                explorer: 'https://minascan.io/mainnet'
+        const MIXER_ABI = [
+            "function depositToMyMixer(bytes32, address, uint256) external payable",
+            "function withdrawFromMyMixer(uint[2], uint[2][2], uint[2], uint[6], bytes32, address, address, uint256, uint256) external payable",
+            "function getMyMixerStats() external view returns (address, uint256, uint256, uint256, address, address, address)",
+            "function getMyPoolBalance(address) external view returns (uint256)",
+            "function doISupportDenomination(uint256) external view returns (bool)",
+            "function DENOM_0_1_ETH() external view returns (uint256)",
+            "function DENOM_1_ETH() external view returns (uint256)",
+            "function DENOM_10_ETH() external view returns (uint256)",
+            "function DENOM_100_ETH() external view returns (uint256)",
+            "event MyDeposit(bytes32 indexed commitment, address indexed token, uint256 amount, uint256 timestamp)",
+            "event MyWithdrawal(bytes32 indexed nullifierHash, address indexed recipient, address token, uint256 amount, uint256 fee)"
+        ];
+        
+        const NULLIFIER_REGISTRY_ABI = [
+            "function isSpent(bytes32) external view returns (bool)",
+            "function totalNullifiersSpent() external view returns (uint256)",
+            "function getNullifierInfo(bytes32) external view returns (bool, address, uint256)"
+        ];
+        
+        const MERKLE_TREE_ABI = [
+            "function addCommitment(bytes32) external returns (uint32)",
+            "function getRoot() external view returns (bytes32)",
+            "function isKnownRoot(bytes32) external view returns (bool)",
+            "function nextIndex() external view returns (uint32)"
+        ];
+        
+        // Global state
+        let provider = null;
+        let signer = null;
+        let account = '';
+        let chainId = null;
+        let mixers = [];
+        let notes = [];
+        let currentDeposit = null;
+        let parsedNote = null;
+        
+        // Navigation functions
+        function navigateToHome() {
+            document.getElementById('homePage').classList.add('active');
+            document.getElementById('appPage').classList.remove('active');
+            window.scrollTo(0, 0);
+        }
+        
+        function navigateToApp() {
+            document.getElementById('homePage').classList.remove('active');
+            document.getElementById('appPage').classList.add('active');
+            window.scrollTo(0, 0);
+            if (provider) {
+                loadUserData();
+                loadFactoryStats();
             }
-        };
-        
-        function updateClock() {
-            document.getElementById('currentTime').textContent = 
-                new Date().toLocaleTimeString('en-US', { hour12: false });
-        }
-        setInterval(updateClock, 1000);
-        updateClock();
-        
-        function switchTab(tab) {
-            currentTab = tab;
-            document.querySelectorAll('.tab-btn').forEach(btn => {
-                btn.classList.toggle('active', btn.dataset.tab === tab);
-            });
-            document.querySelectorAll('.tab-content').forEach(content => {
-                content.classList.toggle('active', content.id === tab + 'Tab');
-            });
-            lucide.createIcons();
         }
         
-        function handleFileUpload(event) {
-            const file = event.target.files[0];
-            if (!file) return;
-            
-            const reader = new FileReader();
-            reader.onload = async (e) => {
-                const content = e.target.result;
-                
-                if (file.name.endsWith('.json')) {
-                    try {
-                        uploadedBuild = JSON.parse(content);
-                        uploadedContract = null;
-                        log(`Loaded pre-compiled build: ${file.name}`, 'success');
-                        document.getElementById('fileInfo').innerHTML = `
-                            <div class="file-info">
-                                <span><i data-lucide="file-check"></i> ${file.name} (Pre-compiled)</span>
-                                <button class="icon-btn" onclick="clearUpload()" style="width: 28px; height: 28px;">
-                                    <i data-lucide="x"></i>
-                                </button>
-                            </div>
-                        `;
-                        document.getElementById('fileInfo').style.display = 'block';
-                        lucide.createIcons();
-                    } catch (err) {
-                        log(`Invalid build.json format: ${err.message}`, 'error');
+        function scrollToFeatures() {
+            document.getElementById('featuresSection').scrollIntoView({ behavior: 'smooth' });
+        }
+        
+        // Initialize app
+        window.addEventListener('load', () => {
+            loadStoredNotes();
+            checkExistingConnection();
+        });
+        
+        // Check for existing wallet connection
+        async function checkExistingConnection() {
+            if (typeof window.ethereum !== 'undefined') {
+                try {
+                    const accounts = await window.ethereum.request({ method: 'eth_accounts' });
+                    if (accounts.length > 0) {
+                        await initializeProvider();
                     }
+                } catch (error) {
+                    console.error('Error checking connection:', error);
+                }
+            }
+        }
+        
+        // Initialize provider
+        async function initializeProvider() {
+            try {
+                provider = new ethers.providers.Web3Provider(window.ethereum);
+                signer = provider.getSigner();
+                account = await signer.getAddress();
+                
+                const network = await provider.getNetwork();
+                chainId = network.chainId;
+                
+                updateUI();
+                await loadUserData();
+                await loadFactoryStats();
+                
+                // Setup event listeners
+                window.ethereum.on('accountsChanged', handleAccountsChanged);
+                window.ethereum.on('chainChanged', () => window.location.reload());
+            } catch (error) {
+                console.error('Error initializing provider:', error);
+                showNotification('Failed to initialize provider', 'error');
+            }
+        }
+        
+        async function handleAccountsChanged(accounts) {
+            if (accounts.length === 0) {
+                disconnectWallet();
+            } else {
+                account = accounts[0];
+                updateUI();
+                await loadUserData();
+            }
+        }
+        
+        // Wallet connection functions
+        function openWalletModal() {
+            document.getElementById('walletModal').classList.add('active');
+        }
+        
+        function closeWalletModal() {
+            document.getElementById('walletModal').classList.remove('active');
+        }
+        
+        async function connectWallet(providerType) {
+            try {
+                if (providerType === 'metamask') {
+                    if (typeof window.ethereum === 'undefined') {
+                        showNotification('MetaMask is not installed', 'error');
+                        window.open('https://metamask.io/download.html', '_blank');
+                        return;
+                    }
+                    
+                    await window.ethereum.request({ method: 'eth_requestAccounts' });
+                    await initializeProvider();
+                    showNotification('MetaMask connected successfully', 'success');
+                    closeWalletModal();
+                    
                 } else {
-                    uploadedContract = content;
-                    uploadedBuild = null;
-                    log(`Loaded contract source: ${file.name}`, 'success');
-                    document.getElementById('fileInfo').innerHTML = `
-                        <div class="file-info">
-                            <span><i data-lucide="file-code"></i> ${file.name}</span>
-                            <button class="icon-btn" onclick="clearUpload()" style="width: 28px; height: 28px;">
-                                <i data-lucide="x"></i>
-                            </button>
-                        </div>
-                    `;
-                    document.getElementById('fileInfo').style.display = 'block';
-                    lucide.createIcons();
-                }
-            };
-            reader.readAsText(file);
-        }
-        
-        function clearUpload() {
-            uploadedContract = null;
-            uploadedBuild = null;
-            document.getElementById('fileInput').value = '';
-            document.getElementById('fileInfo').style.display = 'none';
-            log('Cleared uploaded file', 'info');
-        }
-        
-        function setNetwork(network) {
-            currentNetwork = network;
-            document.querySelectorAll('.network-btn').forEach(btn => {
-                btn.classList.toggle('active', btn.dataset.network === network);
-            });
-            document.getElementById('currentNetwork').textContent = NETWORK_CONFIG[network].name;
-            log(`Network switched to ${NETWORK_CONFIG[network].name}`, 'info');
-        }
-        
-        function log(message, type = 'info') {
-            const timestamp = new Date().toLocaleTimeString('en-US', { hour12: false });
-            logs.push({ timestamp, message, type });
-            
-            const consoleEl = document.getElementById('consoleOutput');
-            const logEl = document.createElement('div');
-            logEl.className = `log ${type}`;
-            logEl.textContent = `[${timestamp}] ${message}`;
-            consoleEl.appendChild(logEl);
-            consoleEl.scrollTop = consoleEl.scrollHeight;
-            
-            document.getElementById('statusText').textContent = 
-                type === 'error' ? 'Error' : 
-                type === 'success' ? 'Success' : 'Processing';
-        }
-        
-        function clearConsole() {
-            document.getElementById('consoleOutput').innerHTML = '';
-            logs = [];
-            log('Console cleared', 'info');
-        }
-        
-        function exportLogs() {
-            const logText = logs.map(l => `[${l.timestamp}] ${l.message}`).join('\n');
-            const blob = new Blob([logText], { type: 'text/plain' });
-            const url = URL.createObjectURL(blob);
-            const a = document.createElement('a');
-            a.href = url;
-            a.download = `mina-deploy-logs-${Date.now()}.txt`;
-            a.click();
-            URL.revokeObjectURL(url);
-        }
-        
-        function formatCode() {
-            const editor = document.getElementById('codeEditor');
-            try {
-                let code = editor.value
-                    .replace(/\}\s*else\s*\{/g, '} else {')
-                    .replace(/\}\s*catch/g, '} catch')
-                    .replace(/\)\s*\{/g, ') {');
-                editor.value = code;
-                log('Code formatted', 'success');
-            } catch (e) {
-                log(`Format error: ${e.message}`, 'error');
-            }
-        }
-        
-        function clearCode() {
-            if (confirm('Clear editor?')) {
-                document.getElementById('codeEditor').value = '';
-                log('Editor cleared', 'info');
-            }
-        }
-        
-        function saveCode() {
-            const code = document.getElementById('codeEditor').value;
-            const blob = new Blob([code], { type: 'text/javascript' });
-            const url = URL.createObjectURL(blob);
-            const a = document.createElement('a');
-            a.href = url;
-            a.download = `mina-contract-${Date.now()}.ts`;
-            a.click();
-            URL.revokeObjectURL(url);
-            log('Code saved to file', 'success');
-        }
-        
-        async function connectWallet() {
-            try {
-                if (!window.mina) {
-                    throw new Error('No Mina wallet found. Please install Auro Wallet or Pallad.');
-                }
-                
-                log('Requesting wallet connection...', 'info');
-                const accounts = await window.mina.requestAccounts();
-                
-                if (!accounts || accounts.length === 0) {
-                    throw new Error('No accounts found');
-                }
-                
-                connectedWallet = accounts[0];
-                document.getElementById('walletStatus').textContent = 
-                    `${connectedWallet.slice(0, 8)}...${connectedWallet.slice(-6)}`;
-                document.getElementById('connectBtn').disabled = true;
-                document.getElementById('disconnectBtn').style.display = 'flex';
-                
-                log(`Wallet connected: ${connectedWallet}`, 'success');
-                showToast('Wallet connected successfully', 'success');
-                
-                const networkInfo = await window.mina.requestNetwork();
-                if (networkInfo && networkInfo.networkID) {
-                    log(`Wallet network: ${networkInfo.networkID}`, 'info');
+                    showNotification(`${providerType} integration coming soon`, 'info');
                 }
             } catch (error) {
-                log(`Wallet connection failed: ${error.message}`, 'error');
-                showToast(error.message, 'error');
+                console.error('Connection error:', error);
+                showNotification(`Failed to connect: ${error.message}`, 'error');
             }
         }
         
         function disconnectWallet() {
-            connectedWallet = null;
-            document.getElementById('walletStatus').textContent = 'Connect Wallet';
-            document.getElementById('connectBtn').disabled = false;
-            document.getElementById('disconnectBtn').style.display = 'none';
-            log('Wallet disconnected', 'info');
+            provider = null;
+            signer = null;
+            account = '';
+            chainId = null;
+            mixers = [];
+            updateUI();
+            showNotification('Wallet disconnected', 'info');
         }
         
-        function showToast(message, type = 'info') {
-            const toast = document.createElement('div');
-            toast.className = `toast ${type}`;
-            toast.innerHTML = `
-                <i data-lucide="${type === 'success' ? 'check-circle' : 'alert-circle'}"></i>
-                <span>${message}</span>
-                <button class="icon-btn" onclick="this.parentElement.remove()" style="margin-left: auto; width: 28px; height: 28px;">
-                    <i data-lucide="x"></i>
-                </button>
-            `;
-            document.body.appendChild(toast);
-            lucide.createIcons();
-            setTimeout(() => toast.remove(), 5000);
+        // Update UI based on connection status
+        function updateUI() {
+            if (account) {
+                document.getElementById('connectBtn').classList.add('hidden');
+                document.getElementById('connectedSection').classList.remove('hidden');
+                document.getElementById('accountDisplay').textContent = 
+                    account.slice(0, 6) + '...' + account.slice(-4);
+                
+                updateBalance();
+            } else {
+                document.getElementById('connectBtn').classList.remove('hidden');
+                document.getElementById('connectedSection').classList.add('hidden');
+                document.getElementById('userBalance').textContent = '0 ETH';
+            }
+            
+            updateMixerSelect();
         }
         
-        async function deployContract() {
-            const btn = document.getElementById('deployBtn');
-            const originalHTML = btn.innerHTML;
+        async function updateBalance() {
+            if (!provider || !account) return;
+            try {
+                const balance = await provider.getBalance(account);
+                const formatted = ethers.utils.formatEther(balance);
+                document.getElementById('userBalance').textContent = 
+                    parseFloat(formatted).toFixed(4) + ' ETH';
+            } catch (error) {
+                console.error('Error updating balance:', error);
+            }
+        }
+        
+        // Load user data
+        async function loadUserData() {
+            if (!provider || !account) return;
             
-            const privateKey = document.getElementById('privateKey').value.trim();
-            const fee = parseFloat(document.getElementById('fee').value) * 1e9;
-            const memo = document.getElementById('memo').value.trim();
+            try {
+                const factory = new ethers.Contract(FACTORY_ADDRESS, FACTORY_ABI, provider);
+                const mixerAddress = await factory.userMixerAddress(account);
+                
+                if (mixerAddress !== ethers.constants.AddressZero) {
+                    const mixer = new ethers.Contract(mixerAddress, MIXER_ABI, provider);
+                    const stats = await mixer.getMyMixerStats();
+                    
+                    mixers = [{
+                        address: mixerAddress,
+                        owner: stats[0],
+                        totalDeposits: stats[1].toString(),
+                        totalWithdrawals: stats[2].toString(),
+                        totalVolume: ethers.utils.formatEther(stats[3]),
+                        verifier: stats[4],
+                        merkleTree: stats[5],
+                        nullifierRegistry: stats[6]
+                    }];
+                } else {
+                    mixers = [];
+                }
+                
+                updateMixersList();
+                updateMixerSelect();
+                
+            } catch (error) {
+                console.error('Error loading user data:', error);
+                showNotification('Failed to load mixers', 'error');
+            }
+        }
+        
+        // Load factory stats
+        async function loadFactoryStats() {
+            if (!provider) return;
             
-            if (!privateKey && !connectedWallet) {
-                showToast('Connect wallet or enter private key', 'error');
+            try {
+                const factory = new ethers.Contract(FACTORY_ADDRESS, FACTORY_ABI, provider);
+                const stats = await factory.getAdminStats();
+                
+                document.getElementById('totalMixers').textContent = stats[3].toString();
+                document.getElementById('totalFees').textContent = 
+                    parseFloat(ethers.utils.formatEther(stats[0])).toFixed(2) + ' ETH';
+                
+                // Get nullifier registry stats
+                const nullifierRegistry = new ethers.Contract(NULLIFIER_REGISTRY_ADDRESS, NULLIFIER_REGISTRY_ABI, provider);
+                const totalNullifiers = await nullifierRegistry.totalNullifiersSpent();
+                document.getElementById('totalNullifiers').textContent = totalNullifiers.toString();
+                    
+            } catch (error) {
+                console.error('Error loading factory stats:', error);
+            }
+        }
+        
+        // Tab switching
+        function switchTab(tabName) {
+            const tabs = document.querySelectorAll('.tab');
+            tabs.forEach(tab => tab.classList.remove('active'));
+            event.target.classList.add('active');
+            
+            document.getElementById('deployTab').classList.add('hidden');
+            document.getElementById('depositTab').classList.add('hidden');
+            document.getElementById('withdrawTab').classList.add('hidden');
+            document.getElementById('mixersTab').classList.add('hidden');
+            
+            document.getElementById(tabName + 'Tab').classList.remove('hidden');
+            
+            if (tabName === 'deposit') {
+                currentDeposit = generateDeposit();
+                document.getElementById('noteDisplay').classList.add('hidden');
+            }
+        }
+        
+        // Deploy mixer
+        async function deployMixer() {
+            if (!signer) {
+                showNotification('Please connect your wallet first', 'warning');
+                openWalletModal();
                 return;
             }
             
-            let contractCode;
-            if (currentTab === 'upload' && (uploadedContract || uploadedBuild)) {
-                if (uploadedBuild) {
-                    log('Using pre-compiled build', 'info');
-                    await deployPrecompiled(uploadedBuild, fee, memo, privateKey);
+            const deployBtn = document.getElementById('deployBtn');
+            deployBtn.disabled = true;
+            deployBtn.innerHTML = '<div class="loading-spinner"></div> Deploying Your Mixer...';
+            
+            try {
+                const factory = new ethers.Contract(FACTORY_ADDRESS, FACTORY_ABI, signer);
+                
+                // Check if user already has a mixer
+                const existingMixer = await factory.userMixerAddress(account);
+                if (existingMixer !== ethers.constants.AddressZero) {
+                    showNotification('You already have a mixer deployed!', 'warning');
+                    deployBtn.disabled = false;
+                    deployBtn.innerHTML = '✨ Deploy My Mixer (1 ETH)';
                     return;
                 }
-                contractCode = uploadedContract;
-            } else {
-                contractCode = document.getElementById('codeEditor').value.trim();
+                
+                const fee = await factory.DEPLOYMENT_FEE();
+                showNotification(`Deployment fee: ${ethers.utils.formatEther(fee)} ETH. Confirm transaction...`, 'info');
+                
+                const tx = await factory.deployMyMixer({ 
+                    value: fee,
+                    gasLimit: 5000000
+                });
+                
+                showNotification('🚀 Transaction sent! Deploying your mixer...', 'info');
+                const receipt = await tx.wait();
+                
+                const event = receipt.events?.find(e => e.event === 'MixerDeployedForUser');
+                if (event) {
+                    showNotification(`🎉 Success! Your mixer is live at ${event.args.mixerAddress.slice(0, 10)}...`, 'success');
+                    await loadUserData();
+                    await loadFactoryStats();
+                    switchTab('mixers');
+                }
+                
+            } catch (error) {
+                console.error('Deployment failed:', error);
+                if (error.code === 4001) {
+                    showNotification('Transaction cancelled by user', 'warning');
+                } else if (error.code === 'INSUFFICIENT_FUNDS') {
+                    showNotification('Insufficient funds to pay deployment fee', 'error');
+                } else {
+                    showNotification(`Deployment failed: ${error.message}`, 'error');
+                }
+            } finally {
+                deployBtn.disabled = false;
+                deployBtn.innerHTML = '✨ Deploy My Mixer (1 ETH)';
             }
-            
-            if (!contractCode) {
-                showToast('Enter contract code or upload a file', 'error');
+        }
+        
+        // Make deposit
+        async function makeDeposit() {
+            if (!signer) {
+                showNotification('Please connect your wallet', 'warning');
+                openWalletModal();
                 return;
             }
             
-            btn.disabled = true;
-            btn.innerHTML = '<span class="loader"></span> Deploying...';
-            document.getElementById('statusText').textContent = 'Deploying';
+            const selectedMixer = document.getElementById('depositMixer').value;
+            if (!selectedMixer) {
+                showNotification('Please select a mixer', 'warning');
+                return;
+            }
+            
+            if (!currentDeposit) {
+                currentDeposit = generateDeposit();
+            }
+            
+            const depositBtn = document.getElementById('depositBtn');
+            depositBtn.disabled = true;
+            depositBtn.innerHTML = '<div class="loading-spinner"></div> Processing...';
             
             try {
-                log('Starting deployment...', 'info');
-                log(`Network: ${NETWORK_CONFIG[currentNetwork].name}`, 'info');
-                log(`GraphQL: ${NETWORK_CONFIG[currentNetwork].graphql}`, 'info');
+                const mixer = new ethers.Contract(selectedMixer, MIXER_ABI, signer);
                 
-                log('Compiling contract...', 'info');
-                const { o1js } = window;
+                // Get denomination (default to 0.1 ETH for now)
+                const denomination = await mixer.DENOM_0_1_ETH();
                 
-                const wrappedCode = `
-                    (async function() {
-                        ${contractCode}
-                        return { MyContract };
-                    })()
-                `;
-                
-                const module = await eval(wrappedCode);
-                const ContractClass = module.MyContract;
-                
-                if (!ContractClass) {
-                    throw new Error('Contract must export a class named MyContract');
-                }
-                
-                log('Contract code parsed successfully', 'success');
-                log('Compiling zkApp (this takes 30-60 seconds)...', 'warning');
-                
-                const { verificationKey } = await ContractClass.compile();
-                log('✓ Contract compiled successfully', 'success');
-                
-                const networkConfig = NETWORK_CONFIG[currentNetwork];
-                const network = o1js.Mina.Network({
-                    mina: networkConfig.graphql,
-                    archive: networkConfig.graphql
-                });
-                o1js.Mina.setActiveInstance(network);
-                log(`Connected to ${networkConfig.name}`, 'success');
-                
-                let deployerKey, deployerAddress;
-                
-                if (connectedWallet) {
-                    deployerAddress = o1js.PublicKey.fromBase58(connectedWallet);
-                    log(`Using wallet: ${deployerAddress.toBase58()}`, 'info');
-                } else {
-                    deployerKey = o1js.PrivateKey.fromBase58(privateKey);
-                    deployerAddress = deployerKey.toPublicKey();
-                    log(`Using private key: ${deployerAddress.toBase58()}`, 'info');
-                }
-                
-                const contractKey = o1js.PrivateKey.random();
-                const contractAddress = contractKey.toPublicKey();
-                log(`Contract address: ${contractAddress.toBase58()}`, 'info');
-                
-                log('Creating deployment transaction...', 'info');
-                const tx = await o1js.Mina.transaction(
-                    {sender: deployerAddress, fee: fee, memo: memo || undefined},
-                    async () => {
-                        o1js.AccountUpdate.fundNewAccount(deployerAddress);
-                        const contract = new ContractClass(contractAddress);
-                        await contract.deploy({verificationKey});
-                    }
+                // Generate commitment
+                const commitment = pedersenHash(
+                    ethers.utils.solidityKeccak256(
+                        ['uint256', 'uint256'], 
+                        [currentDeposit.secret, currentDeposit.nullifier]
+                    )
                 );
                 
-                log('Generating proof (this may take 60-120 seconds)...', 'warning');
-                await tx.prove();
-                log('✓ Proof generated', 'success');
+                showNotification('Submitting deposit transaction...', 'info');
                 
-                log('Signing transaction...', 'info');
-                if (connectedWallet) {
-                    log('Requesting wallet signature...', 'info');
-                    tx.sign([contractKey]);
-                    
-                    const txJSON = tx.toJSON();
-                    const result = await window.mina.sendTransaction({
-                        transaction: txJSON,
-                        feePayer: {
-                            fee: fee / 1e9,
-                            memo: memo
-                        }
+                const tx = await mixer.depositToMyMixer(
+                    commitment,
+                    ethers.constants.AddressZero, // ETH
+                    denomination,
+                    { value: denomination, gasLimit: 1000000 }
+                );
+                
+                showNotification('Deposit transaction sent. Waiting for confirmation...', 'info');
+                const receipt = await tx.wait();
+                
+                const event = receipt.events?.find(e => e.event === 'MyDeposit');
+                
+                if (event) {
+                    const note = createNote({
+                        secret: currentDeposit.secret,
+                        nullifier: currentDeposit.nullifier,
+                        mixerAddress: selectedMixer,
+                        denomination: ethers.utils.formatEther(denomination)
                     });
                     
-                    if (result.hash) {
-                        showResults({
-                            txHash: result.hash,
-                            contractAddress: contractAddress.toBase58(),
-                            network: currentNetwork,
-                            timestamp: new Date().toISOString(),
-                            fee: fee / 1e9,
-                            verificationKey: verificationKey.hash.toString()
-                        });
-                        
-                        log(`✅ Deployment complete!`, 'success');
-                        log(`Transaction: ${result.hash}`, 'success');
-                        log(`Contract: ${contractAddress.toBase58()}`, 'success');
-                        showToast('Contract deployed successfully!', 'success');
-                    } else {
-                        throw new Error('Transaction failed');
-                    }
-                } else {
-                    tx.sign([deployerKey, contractKey]);
+                    document.getElementById('noteString').textContent = note;
+                    document.getElementById('noteDisplay').classList.remove('hidden');
                     
-                    log('Sending transaction to network...', 'info');
-                    const sentTx = await tx.send();
+                    const noteData = {
+                        noteString: note,
+                        mixerAddress: selectedMixer,
+                        denomination: ethers.utils.formatEther(denomination),
+                        timestamp: Date.now(),
+                        commitment: commitment
+                    };
                     
-                    if (sentTx.status === 'pending') {
-                        const txHash = sentTx.hash;
-                        
-                        showResults({
-                            txHash: txHash,
-                            contractAddress: contractAddress.toBase58(),
-                            network: currentNetwork,
-                            timestamp: new Date().toISOString(),
-                            fee: fee / 1e9,
-                            verificationKey: verificationKey.hash.toString()
-                        });
-                        
-                        log(`✅ Deployment complete!`, 'success');
-                        log(`Transaction: ${txHash}`, 'success');
-                        log(`Contract: ${contractAddress.toBase58()}`, 'success');
-                        showToast('Contract deployed successfully!', 'success');
-                    } else {
-                        throw new Error('Transaction failed');
-                    }
+                    saveNote(noteData);
+                    showNotification('✅ Deposit successful! BACKUP YOUR NOTE NOW!', 'success');
+                    
+                    await loadUserData();
+                    await loadFactoryStats();
                 }
                 
             } catch (error) {
-                log(`❌ Deployment failed: ${error.message}`, 'error');
-                showToast(`Deployment failed: ${error.message}`, 'error');
-                console.error(error);
+                console.error('Deposit failed:', error);
+                showNotification(`Deposit failed: ${error.message}`, 'error');
             } finally {
-                btn.disabled = false;
-                btn.innerHTML = originalHTML;
-                lucide.createIcons();
+                depositBtn.disabled = false;
+                depositBtn.innerHTML = '🛡️ Make Private Deposit';
             }
         }
         
-        async function deployPrecompiled(build, fee, memo, privateKey) {
-            const btn = document.getElementById('deployBtn');
-            const originalHTML = btn.innerHTML;
+        // Withdraw funds
+        async function withdrawFunds() {
+            if (!signer) {
+                showNotification('Please connect your wallet', 'warning');
+                openWalletModal();
+                return;
+            }
             
-            btn.disabled = true;
-            btn.innerHTML = '<span class="loader"></span> Deploying...';
+            if (!parsedNote) {
+                showNotification('Please provide a valid note', 'warning');
+                return;
+            }
+            
+            const recipient = document.getElementById('recipient').value;
+            if (!recipient || !ethers.utils.isAddress(recipient)) {
+                showNotification('Please provide a valid recipient address', 'warning');
+                return;
+            }
+            
+            const withdrawBtn = document.getElementById('withdrawBtn');
+            withdrawBtn.disabled = true;
+            withdrawBtn.innerHTML = '<div class="loading-spinner"></div> Processing...';
+            
+            document.getElementById('proofGenerating').classList.remove('hidden');
             
             try {
-                log('Deploying pre-compiled contract...', 'info');
+                // Check if nullifier already spent in SHARED registry
+                const nullifierRegistry = new ethers.Contract(NULLIFIER_REGISTRY_ADDRESS, NULLIFIER_REGISTRY_ABI, provider);
                 
-                if (!build.verificationKey) {
-                    throw new Error('Invalid build.json: missing verificationKey');
+                const nullifierHash = pedersenHash(
+                    ethers.utils.solidityKeccak256(['uint256'], [parsedNote.nullifier])
+                );
+                
+                const isSpent = await nullifierRegistry.isSpent(nullifierHash);
+                if (isSpent) {
+                    const info = await nullifierRegistry.getNullifierInfo(nullifierHash);
+                    throw new Error(`This note has already been spent! Used by mixer: ${info[1]}`);
                 }
                 
-                const { o1js } = window;
-                const networkConfig = NETWORK_CONFIG[currentNetwork];
-                const network = o1js.Mina.Network({
-                    mina: networkConfig.graphql,
-                    archive: networkConfig.graphql
+                showNotification('Building Merkle proof...', 'info');
+                
+                // Build Merkle tree from SHARED tree contract
+                const merkleTree = new ethers.Contract(MERKLE_TREE_ADDRESS, MERKLE_TREE_ABI, provider);
+                const root = await merkleTree.getRoot();
+                
+                // Generate commitment
+                const commitment = pedersenHash(
+                    ethers.utils.solidityKeccak256(
+                        ['uint256', 'uint256'], 
+                        [parsedNote.secret, parsedNote.nullifier]
+                    )
+                );
+                
+                showNotification('Generating zero-knowledge proof... This may take a minute.', 'info');
+                
+                const useRelayer = document.getElementById('useRelayer').checked;
+                const relayerFee = useRelayer ? document.getElementById('relayerFee').value : '0';
+                
+                // Generate proof (simplified - in production use snarkjs)
+                const proof = await generateWithdrawProof({
+                    secret: parsedNote.secret,
+                    nullifier: parsedNote.nullifier,
+                    recipient,
+                    relayer: useRelayer ? "0x0000000000000000000000000000000000000001" : ethers.constants.AddressZero,
+                    fee: useRelayer ? ethers.utils.parseEther(relayerFee) : 0,
+                    refund: 0,
+                    nullifierHash,
+                    root
                 });
-                o1js.Mina.setActiveInstance(network);
                 
-                let deployerKey, deployerAddress;
+                document.getElementById('proofGenerating').classList.add('hidden');
+                showNotification('Proof generated! Submitting withdrawal...', 'info');
                 
-                if (connectedWallet) {
-                    deployerAddress = o1js.PublicKey.fromBase58(connectedWallet);
-                } else {
-                    deployerKey = o1js.PrivateKey.fromBase58(privateKey);
-                    deployerAddress = deployerKey.toPublicKey();
+                const mixer = new ethers.Contract(parsedNote.mixerAddress, MIXER_ABI, signer);
+                
+                // Call withdrawFromMyMixer
+                const tx = await mixer.withdrawFromMyMixer(
+                    proof.a,
+                    proof.b,
+                    proof.c,
+                    [
+                        ethers.utils.parseEther(parsedNote.denomination),
+                        0, // token (ETH = 0)
+                        root,
+                        nullifierHash,
+                        recipient,
+                        useRelayer ? "0x0000000000000000000000000000000000000001" : ethers.constants.AddressZero
+                    ],
+                    nullifierHash,
+                    recipient,
+                    useRelayer ? "0x0000000000000000000000000000000000000001" : ethers.constants.AddressZero,
+                    useRelayer ? ethers.utils.parseEther(relayerFee) : 0,
+                    0,
+                    { gasLimit: 2000000 }
+                );
+                
+                showNotification('Withdrawal transaction sent. Waiting for confirmation...', 'info');
+                const receipt = await tx.wait();
+                
+                if (receipt.status === 1) {
+                    showNotification('✅ Withdrawal successful! Funds sent anonymously.', 'success');
+                    deleteNote(document.getElementById('withdrawNote').value);
+                    document.getElementById('withdrawNote').value = '';
+                    document.getElementById('parsedNoteDisplay').classList.add('hidden');
+                    parsedNote = null;
+                    await loadUserData();
+                    await loadFactoryStats();
                 }
-                
-                const contractKey = o1js.PrivateKey.random();
-                const contractAddress = contractKey.toPublicKey();
-                
-                log(`Contract address: ${contractAddress.toBase58()}`, 'info');
-                log('Creating transaction...', 'info');
-                
-                const verificationKey = {
-                    data: build.verificationKey.data,
-                    hash: o1js.Field(build.verificationKey.hash)
-                };
-                
-                const accountUpdate = o1js.AccountUpdate.createSigned(deployerAddress);
-                accountUpdate.account.balance.addInPlace(o1js.UInt64.from(1e9));
-                
-                const zkappUpdate = o1js.AccountUpdate.create(contractAddress);
-                zkappUpdate.account.permissions.set(o1js.Permissions.default());
-                zkappUpdate.account.verificationKey.set(verificationKey);
-                
-                log('Sending transaction...', 'info');
-                
-                showResults({
-                    txHash: 'Pre-compiled deployment initiated',
-                    contractAddress: contractAddress.toBase58(),
-                    network: currentNetwork,
-                    timestamp: new Date().toISOString(),
-                    fee: fee / 1e9,
-                    verificationKey: build.verificationKey.hash
-                });
-                
-                log('✅ Pre-compiled contract deployed', 'success');
-                showToast('Pre-compiled contract deployed', 'success');
                 
             } catch (error) {
-                log(`❌ Deployment failed: ${error.message}`, 'error');
-                showToast(error.message, 'error');
+                console.error('Withdrawal failed:', error);
+                showNotification(`Withdrawal failed: ${error.message}`, 'error');
             } finally {
-                btn.disabled = false;
-                btn.innerHTML = originalHTML;
-                lucide.createIcons();
+                document.getElementById('proofGenerating').classList.add('hidden');
+                withdrawBtn.disabled = false;
+                withdrawBtn.innerHTML = '💵 Withdraw Funds Anonymously';
             }
         }
         
-        function showResults(result) {
-            const panel = document.getElementById('resultsPanel');
-            const content = document.getElementById('resultsContent');
+        // Helper functions
+        function generateRandomBigInt() {
+            const bytes = new Uint8Array(31);
+            crypto.getRandomValues(bytes);
+            return '0x' + Array.from(bytes).map(b => b.toString(16).padStart(2, '0')).join('');
+        }
+        
+        function generateDeposit() {
+            return {
+                secret: generateRandomBigInt(),
+                nullifier: generateRandomBigInt()
+            };
+        }
+        
+        function pedersenHash(data) {
+            // Simplified - in production use actual Poseidon hash
+            return data;
+        }
+        
+        function createNote({ secret, nullifier, mixerAddress, denomination }) {
+            return `mymoney-${denomination}-${chainId}-${mixerAddress}-${secret}-${nullifier}`;
+        }
+        
+        function parseNote(noteString) {
+            const parts = noteString.trim().split('-');
+            if (parts[0] !== 'mymoney' || parts.length !== 6) {
+                throw new Error('Invalid note format');
+            }
+            return {
+                protocol: parts[0],
+                denomination: parts[1],
+                chainId: parts[2],
+                mixerAddress: parts[3],
+                secret: parts[4],
+                nullifier: parts[5]
+            };
+        }
+        
+        async function generateWithdrawProof(params) {
+            // Simulate proof generation - in production use snarkjs with your circuit
+            await new Promise(resolve => setTimeout(resolve, 2000));
+            return {
+                a: ["0", "0"],
+                b: [["0", "0"], ["0", "0"]],
+                c: ["0", "0"]
+            };
+        }
+        
+        // Note management
+        function loadStoredNotes() {
+            try {
+                const stored = localStorage.getItem('myMoney_notes');
+                if (stored) {
+                    notes = JSON.parse(stored);
+                    updateNotesDisplay();
+                }
+            } catch (error) {
+                console.error('Error loading notes:', error);
+            }
+        }
+        
+        function saveNote(note) {
+            try {
+                notes.push(note);
+                localStorage.setItem('myMoney_notes', JSON.stringify(notes));
+                updateNotesDisplay();
+            } catch (error) {
+                console.error('Error saving note:', error);
+            }
+        }
+        
+        function deleteNote(noteString) {
+            try {
+                notes = notes.filter(note => note.noteString !== noteString);
+                localStorage.setItem('myMoney_notes', JSON.stringify(notes));
+                updateNotesDisplay();
+            } catch (error) {
+                console.error('Error deleting note:', error);
+            }
+        }
+        
+        function updateNotesDisplay() {
+            if (notes.length > 0) {
+                document.getElementById('savedNotes').classList.remove('hidden');
+                document.getElementById('notesCount').textContent = notes.length;
+                document.getElementById('notesCountText').textContent = notes.length;
+            } else {
+                document.getElementById('savedNotes').classList.add('hidden');
+            }
+        }
+        
+        // UI update functions
+        function updateMixersList() {
+            const mixersList = document.getElementById('mixersList');
             
-            deploymentHistory.push(result);
+            if (mixers.length === 0) {
+                mixersList.innerHTML = `
+                    <div class="empty-state">
+                        <div class="empty-icon">🔐</div>
+                        <div class="empty-title">No mixers deployed yet</div>
+                        <div class="empty-description">Deploy your first privacy mixer to get started. Pay 1 ETH once, own forever!</div>
+                    </div>
+                `;
+                return;
+            }
             
-            content.innerHTML = `
-                <div class="result-card">
-                    <div class="result-header">
-                        <i data-lucide="check-circle" style="color: var(--success); font-size: 2rem;"></i>
-                        <div>
-                            <h3 style="font-size: 1.3rem; margin-bottom: 5px;">Contract Deployed Successfully</h3>
-                            <p style="color: #94a3b8;">${new Date(result.timestamp).toLocaleString()}</p>
+            mixersList.innerHTML = `
+                <div class="mixer-grid">
+                    ${mixers.map(mixer => `
+                        <div class="mixer-card">
+                            <div class="mixer-header">
+                                <div>
+                                    <div class="mixer-title">🔐 Your Privacy Mixer</div>
+                                    <div class="mixer-address">${mixer.address}</div>
+                                </div>
+                                <div class="mixer-status status-active">
+                                    ● Active
+                                </div>
+                            </div>
+                            <div class="mixer-stats">
+                                <div class="mixer-stat">
+                                    <div class="mixer-stat-label">Total Deposits</div>
+                                    <div class="mixer-stat-value">${mixer.totalDeposits}</div>
+                                </div>
+                                <div class="mixer-stat">
+                                    <div class="mixer-stat-label">Total Withdrawals</div>
+                                    <div class="mixer-stat-value">${mixer.totalWithdrawals}</div>
+                                </div>
+                                <div class="mixer-stat">
+                                    <div class="mixer-stat-label">Total Volume</div>
+                                    <div class="mixer-stat-value">${parseFloat(mixer.totalVolume).toFixed(4)} ETH</div>
+                                </div>
+                                <div class="mixer-stat">
+                                    <div class="mixer-stat-label">Shared Infrastructure</div>
+                                    <div class="mixer-stat-value">✓ Enabled</div>
+                                </div>
+                            </div>
+                            <div class="alert alert-info" style="margin-top: 0.75rem; font-size: 0.75rem;">
+                                <span class="alert-icon">🔒</span>
+                                <div>
+                                    Uses shared verifier, Merkle tree, and nullifier registry for maximum privacy
+                                </div>
+                            </div>
+                            <div class="mixer-actions" style="margin-top: 0.75rem;">
+                                <button class="btn btn-secondary btn-small" onclick="copyAddress('${mixer.address}')">
+                                    📋 Copy Address
+                                </button>
+                                <button class="btn btn-secondary btn-small" onclick="viewOnExplorer('${mixer.address}')">
+                                    🔗 View on Etherscan
+                                </button>
+                            </div>
                         </div>
-                    </div>
-                    
-                    <div class="result-details">
-                        <div class="detail-item" style="grid-column: 1 / -1;">
-                            <div class="detail-label">Contract Address</div>
-                            <div style="font-family: monospace; font-size: 13px; word-break: break-all;">${result.contractAddress}</div>
-                        </div>
-                        <div class="detail-item" style="grid-column: 1 / -1;">
-                            <div class="detail-label">Transaction Hash</div>
-                            <div style="font-family: monospace; font-size: 12px; word-break: break-all;">${result.txHash}</div>
-                        </div>
-                        <div class="detail-item">
-                            <div class="detail-label">Network</div>
-                            <div>${NETWORK_CONFIG[result.network].name}</div>
-                        </div>
-                        <div class="detail-item">
-                            <div class="detail-label">Fee</div>
-                            <div>${result.fee} MINA</div>
-                        </div>
-                        <div class="detail-item" style="grid-column: 1 / -1;">
-                            <div class="detail-label">Verification Key Hash</div>
-                            <div style="font-family: monospace; font-size: 12px; word-break: break-all;">${result.verificationKey}</div>
-                        </div>
-                    </div>
-                    
-                    <div style="display: flex; gap: 10px; margin-top: 20px; flex-wrap: wrap;">
-                        <button class="btn" onclick="copyToClipboard('${result.contractAddress}', 'Address')">
-                            <i data-lucide="copy"></i> Copy Address
-                        </button>
-                        <button class="btn btn-secondary" onclick="viewOnExplorer('${result.txHash}')">
-                            <i data-lucide="external-link"></i> View on Explorer
-                        </button>
-                        <button class="btn btn-secondary" onclick="saveDeploymentInfo()">
-                            <i data-lucide="download"></i> Save Info
-                        </button>
-                    </div>
+                    `).join('')}
                 </div>
             `;
+        }
+        
+        function updateMixerSelect() {
+            const select = document.getElementById('depositMixer');
             
-            panel.style.display = 'block';
-            lucide.createIcons();
+            select.innerHTML = '<option value="">Choose your mixer...</option>' +
+                mixers.map(mixer => 
+                    `<option value="${mixer.address}">🔐 Your Mixer - ${mixer.address.slice(0, 10)}...</option>`
+                ).join('');
         }
         
-        function copyToClipboard(text, label) {
-            navigator.clipboard.writeText(text);
-            showToast(`${label} copied to clipboard`, 'success');
+        async function refreshMixers() {
+            const refreshBtn = document.getElementById('refreshBtn');
+            refreshBtn.disabled = true;
+            refreshBtn.innerHTML = '<div class="loading-spinner"></div> Refreshing...';
+            
+            await loadUserData();
+            await loadFactoryStats();
+            
+            refreshBtn.disabled = false;
+            refreshBtn.innerHTML = '🔄 Refresh';
+            showNotification('Data refreshed', 'success');
         }
         
-        function viewOnExplorer(txHash) {
-            const explorerUrl = `${NETWORK_CONFIG[currentNetwork].explorer}/tx/${txHash}`;
-            window.open(explorerUrl, '_blank');
+        // Withdraw note handling
+        document.getElementById('withdrawNote').addEventListener('input', (e) => {
+            const noteInput = e.target.value.trim();
+            if (noteInput) {
+                try {
+                    parsedNote = parseNote(noteInput);
+                    document.getElementById('parsedAmount').textContent = parsedNote.denomination + ' ETH';
+                    document.getElementById('parsedMixer').textContent = parsedNote.mixerAddress.slice(0, 16) + '...';
+                    document.getElementById('parsedChain').textContent = parsedNote.chainId;
+                    document.getElementById('parsedNoteDisplay').classList.remove('hidden');
+                    showNotification('Note parsed successfully', 'success');
+                } catch (error) {
+                    parsedNote = null;
+                    document.getElementById('parsedNoteDisplay').classList.add('hidden');
+                }
+            } else {
+                parsedNote = null;
+                document.getElementById('parsedNoteDisplay').classList.add('hidden');
+            }
+        });
+        
+        function loadNoteFile(event) {
+            const file = event.target.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = (e) => {
+                    const content = e.target.result;
+                    document.getElementById('withdrawNote').value = content.trim();
+                    document.getElementById('withdrawNote').dispatchEvent(new Event('input'));
+                };
+                reader.readAsText(file);
+            }
         }
         
-        function saveDeploymentInfo() {
-            const lastDeploy = deploymentHistory[deploymentHistory.length - 1];
-            const info = {
-                ...lastDeploy,
-                code: currentTab === 'write' ? document.getElementById('codeEditor').value : 'Uploaded file'
-            };
-            const blob = new Blob([JSON.stringify(info, null, 2)], { type: 'application/json' });
-            const url = URL.createObjectURL(blob);
-            const a = document.createElement('a');
-            a.href = url;
-            a.download = `mina-deployment-${Date.now()}.json`;
-            a.click();
-            URL.revokeObjectURL(url);
+        function toggleRelayer() {
+            const checkbox = document.getElementById('useRelayer');
+            checkbox.checked = !checkbox.checked;
+            const feeSection = document.getElementById('relayerFeeSection');
+            if (checkbox.checked) {
+                feeSection.classList.remove('hidden');
+            } else {
+                feeSection.classList.add('hidden');
+            }
         }
+        
+        // Copy and download functions
+        function copyNote() {
+            const note = document.getElementById('noteString').textContent;
+            navigator.clipboard.writeText(note);
+            showNotification('Note copied to clipboard', 'success');
+        }
+        
+        function downloadNote() {
+            const note = document.getElementById('noteString').textContent;
+            const element = document.createElement('a');
+            const file = new Blob([note], { type: 'text/plain' });
+            element.href = URL.createObjectURL(file);
+            element.download = `mymoney-note-${Date.now()}.txt`;
+            document.body.appendChild(element);
+            element.click();
+            document.body.removeChild(element);
+            showNotification('Note downloaded successfully', 'success');
+        }
+        
+        function copyAddress(address) {
+            navigator.clipboard.writeText(address);
+            showNotification('Address copied to clipboard', 'success');
+        }
+        
+        function viewOnExplorer(address) {
+            window.open(`https://etherscan.io/address/${address}`, '_blank');
+        }
+        
+        // Notification system
+        function showNotification(message, type = 'info') {
+            const container = document.getElementById('notifications');
+            
+            const notification = document.createElement('div');
+            notification.className = `notification notification-${type}`;
+            notification.innerHTML = `
+                <span style="font-size: 1.125rem;">
+                    ${type === 'success' ? '✅' : type === 'error' ? '❌' : type === 'warning' ? '⚠️' : 'ℹ️'}
+                </span>
+                <span>${message}</span>
+            `;
+            
+            container.appendChild(notification);
+            
+            setTimeout(() => {
+                notification.style.animation = 'slideIn 0.3s ease-out reverse';
+                setTimeout(() => {
+                    if (notification.parentNode) {
+                        container.removeChild(notification);
+                    }
+                }, 300);
+            }, 5000);
+        }
+        
+        // Close modal on outside click
+        document.getElementById('walletModal').addEventListener('click', (e) => {
+            if (e.target.id === 'walletModal') {
+                closeWalletModal();
+            }
+        });
     </script>
 </body>
 </html>
