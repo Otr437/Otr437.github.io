@@ -3,1222 +3,1152 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>🌉 Zeko Ultimate Multi-Chain Bridge</title>
-    
-    <script src="https://cdn.jsdelivr.net/npm/ethers@6.13.2/dist/ethers.umd.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/web3/4.16.0/web3.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/axios/1.7.7/axios.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/@walletconnect/web3-provider@1.8.0/dist/umd/index.min.js"></script>
-    
+    <title>Mina Universal Deployer</title>
+    <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.js"></script>
+    <script src="https://unpkg.com/o1js@1.9.0/dist/web/index.js"></script>
     <style>
+        :root {
+            --primary: #6366f1;
+            --success: #10b981;
+            --error: #ef4444;
+            --warning: #f59e0b;
+            --bg-dark: #0f172a;
+            --bg-card: #1e293b;
+            --border: #334155;
+            --text: #f1f5f9;
+        }
+        
         * { margin: 0; padding: 0; box-sizing: border-box; }
-        body { 
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; 
-            background: linear-gradient(135deg, #0a0e27, #1a1f3a, #0f1419); 
-            color: #fff; 
-            min-height: 100vh; 
-            padding: 20px; 
+        
+        body {
+            font-family: 'Inter', system-ui, sans-serif;
+            background: var(--bg-dark);
+            color: var(--text);
+            min-height: 100vh;
+            padding: 20px;
+            line-height: 1.6;
         }
-        .container { 
-            max-width: 900px; 
-            margin: 0 auto; 
-            background: rgba(20,25,45,0.95); 
-            backdrop-filter: blur(20px); 
-            border-radius: 24px; 
-            padding: 2.5rem; 
-            border: 1px solid rgba(255,255,255,0.08); 
-            box-shadow: 0 25px 50px rgba(0,0,0,0.5);
+        
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
         }
-        h1 { 
-            text-align: center; 
-            background: linear-gradient(90deg, #00d4ff, #7c3aed, #ff6b6b); 
-            -webkit-background-clip: text; 
-            -webkit-text-fill-color: transparent; 
-            font-size: 2.5em; 
-            margin-bottom: 0.5rem;
-            font-weight: 700;
-        }
-        .subtitle {
-            text-align: center;
-            color: rgba(255,255,255,0.6);
-            margin-bottom: 2rem;
-            font-size: 0.95em;
-        }
-        .nav-tabs {
-            display: flex;
-            background: rgba(255,255,255,0.1);
-            border-radius: 16px;
-            padding: 4px;
-            margin-bottom: 2rem;
-            gap: 4px;
-            flex-wrap: wrap;
-        }
-        .nav-tab {
-            flex: 1;
-            min-width: 100px;
-            padding: 12px 16px;
-            border-radius: 12px;
-            border: none;
-            background: transparent;
-            color: rgba(255,255,255,0.6);
-            cursor: pointer;
-            font-weight: 600;
-            transition: all 0.3s;
-            font-size: 0.9em;
-        }
-        .nav-tab.active {
-            background: linear-gradient(45deg, #7c3aed, #00d4ff);
-            color: white;
-            box-shadow: 0 4px 15px rgba(124,58,237,0.4);
-        }
-        .nav-tab:hover:not(.active) {
-            background: rgba(255,255,255,0.15);
-            color: white;
-        }
-        .page {
-            display: none;
-        }
-        .page.active {
-            display: block;
-        }
-        .sdk-info {
-            background: rgba(0,212,255,0.1);
-            border: 1px solid rgba(0,212,255,0.3);
-            border-radius: 12px;
-            padding: 1rem;
-            margin-bottom: 2rem;
-            font-size: 0.8em;
-            color: #00d4ff;
-        }
-        .wallet-detection {
-            background: rgba(0,212,255,0.1);
-            border: 1px solid rgba(0,212,255,0.3);
-            border-radius: 12px;
-            padding: 1rem;
-            margin-bottom: 2rem;
-            font-size: 0.85em;
-        }
-        .detected-wallet {
-            color: #10b981;
-            margin: 0.3rem 0;
-        }
-        .connect-options {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
-            gap: 1rem;
-            margin-bottom: 2rem;
-        }
-        .connect-btn {
-            background: rgba(124,58,237,0.3);
-            border: 2px solid rgba(124,58,237,0.5);
-            border-radius: 16px;
-            padding: 1.5rem;
-            cursor: pointer;
-            transition: all 0.3s;
-            text-align: center;
-        }
-        .connect-btn:hover {
-            background: rgba(124,58,237,0.5);
-            border-color: #7c3aed;
-            transform: translateY(-2px);
-        }
-        .connect-btn .icon {
-            font-size: 2.5em;
-            margin-bottom: 0.5rem;
-        }
-        .connect-btn .name {
-            font-weight: 600;
-            font-size: 1em;
-        }
-        .connect-btn .desc {
-            font-size: 0.75em;
-            color: rgba(255,255,255,0.6);
-            margin-top: 0.3rem;
-        }
-        .wallet-info { 
-            background: linear-gradient(135deg, rgba(124,58,237,0.25), rgba(0,212,255,0.25)); 
-            padding: 1.5rem; 
-            border-radius: 16px; 
-            margin-bottom: 2rem; 
-            border: 1px solid rgba(255,255,255,0.15); 
-        }
-        .info-row {
+        
+        header {
             display: flex;
             justify-content: space-between;
             align-items: center;
-            margin-bottom: 0.8rem;
+            margin-bottom: 30px;
+            padding-bottom: 20px;
+            border-bottom: 1px solid var(--border);
         }
-        .info-row:last-child {
-            margin-bottom: 0;
+        
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 12px;
         }
-        .info-label {
-            color: rgba(255,255,255,0.6);
-            font-size: 0.85em;
+        
+        h1 {
+            font-size: 2rem;
+            background: linear-gradient(90deg, var(--primary), #8b5cf6);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
         }
-        .info-value {
-            color: #00d4ff;
-            font-weight: 600;
-            font-family: monospace;
+        
+        .wallet-section {
+            display: flex;
+            gap: 10px;
         }
-        .bridge-section {
-            background: rgba(255,255,255,0.03);
-            border-radius: 20px;
-            padding: 2rem;
-            margin-bottom: 1.5rem;
-        }
-        .chain-selector { 
-            display: grid; 
-            grid-template-columns: 1fr auto 1fr; 
-            gap: 1.5rem; 
-            margin-bottom: 2rem; 
-            align-items: start;
-        }
-        .chain-box {
-            background: rgba(255,255,255,0.05);
-            border: 2px solid rgba(255,255,255,0.1);
-            border-radius: 16px;
-            padding: 1.5rem;
-        }
-        .swap-btn { 
-            width: 50px;
-            height: 50px;
-            border-radius: 50%;
-            border: 2px solid rgba(255,255,255,0.2);
-            background: rgba(124,58,237,0.3);
-            color: #fff;
-            font-size: 1.5em;
-            cursor: pointer;
-            transition: all 0.3s;
-            margin-top: 2rem;
-        }
-        .swap-btn:hover {
-            transform: rotate(180deg);
-            background: rgba(124,58,237,0.5);
-        }
-        select, input { 
-            width: 100%; 
-            padding: 1rem 1.2rem; 
-            border: 2px solid rgba(255,255,255,0.15); 
-            border-radius: 12px; 
-            font-size: 1em; 
-            background: rgba(255,255,255,0.08); 
-            color: #fff; 
-            font-weight: 500;
-            transition: all 0.3s;
-        }
-        select:focus, input:focus {
-            outline: none;
-            border-color: #00d4ff;
-            background: rgba(255,255,255,0.12);
-        }
-        select option { 
-            background: #1a1f3a; 
-            color: #fff; 
-        }
-        input::placeholder { 
-            color: rgba(255,255,255,0.4); 
-        }
-        .input-group {
-            position: relative;
-            margin-bottom: 1rem;
-        }
-        .input-label {
-            display: block;
-            margin-bottom: 0.7rem;
-            font-size: 0.9em;
-            color: rgba(255,255,255,0.7);
-            font-weight: 600;
-        }
-        .max-btn {
-            position: absolute;
-            right: 12px;
-            top: 42px;
-            background: rgba(124,58,237,0.5);
-            border: 1px solid #7c3aed;
-            color: #fff;
-            padding: 0.4rem 0.8rem;
+        
+        .wallet-btn {
+            padding: 10px 20px;
+            background: var(--bg-card);
+            border: 1px solid var(--border);
             border-radius: 8px;
-            font-size: 0.8em;
+            color: var(--text);
             cursor: pointer;
-            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 8px;
             transition: all 0.2s;
         }
-        .max-btn:hover {
-            background: rgba(124,58,237,0.8);
+        
+        .wallet-btn:hover {
+            border-color: var(--primary);
         }
-        .btn { 
-            width: 100%; 
-            padding: 1.4rem; 
-            border: none; 
-            border-radius: 16px; 
-            font-size: 1.1em; 
-            font-weight: 700; 
-            cursor: pointer; 
-            transition: all 0.3s;
-            text-transform: uppercase;
-        }
-        .btn-primary { 
-            background: linear-gradient(135deg, #7c3aed, #00d4ff); 
-            color: #fff; 
-            box-shadow: 0 10px 30px rgba(124,58,237,0.4);
-        }
-        .btn-primary:hover:not(:disabled) { 
-            transform: translateY(-3px); 
-            box-shadow: 0 15px 40px rgba(124,58,237,0.6); 
-        }
-        .btn-primary:disabled { 
-            opacity: 0.4; 
+        
+        .wallet-btn:disabled {
+            opacity: 0.5;
             cursor: not-allowed;
         }
-        .btn-secondary {
-            background: rgba(16,185,129,0.2);
-            border: 2px solid #10b981;
-            color: #10b981;
-            margin-top: 1rem;
+        
+        .main-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 30px;
+            min-height: 70vh;
         }
-        .btn-secondary:hover {
-            background: rgba(16,185,129,0.3);
+        
+        @media (max-width: 1024px) {
+            .main-grid { grid-template-columns: 1fr; }
         }
-        .status-log { 
-            background: rgba(0,0,0,0.4);
-            border: 1px solid rgba(255,255,255,0.1);
-            border-radius: 12px; 
-            padding: 1.2rem; 
-            max-height: 300px; 
-            overflow-y: auto;
-            font-family: 'Courier New', monospace;
-            font-size: 0.85em;
-        }
-        .log-entry {
-            padding: 0.5rem;
-            margin-bottom: 0.5rem;
-            border-radius: 6px;
-            border-left: 3px solid transparent;
-        }
-        .log-entry.success { 
-            background: rgba(16,185,129,0.15); 
-            border-left-color: #10b981; 
-            color: #6ee7b7;
-        }
-        .log-entry.error { 
-            background: rgba(239,68,68,0.15); 
-            border-left-color: #ef4444; 
-            color: #fca5a5;
-        }
-        .log-entry.warning {
-            background: rgba(251,191,36,0.15);
-            border-left-color: #fbbf24;
-            color: #fcd34d;
-        }
-        .log-entry.info {
-            background: rgba(59,130,246,0.15);
-            border-left-color: #3b82f6;
-            color: #93c5fd;
-        }
-        .timestamp {
-            color: rgba(255,255,255,0.4);
-            font-size: 0.9em;
-            margin-right: 0.5rem;
-        }
-        .api-status {
-            display: flex;
-            gap: 0.5rem;
-            flex-wrap: wrap;
-            margin-top: 0.5rem;
-        }
-        .api-badge {
-            background: rgba(255,255,255,0.08);
-            padding: 0.3rem 0.7rem;
-            border-radius: 6px;
-            font-size: 0.75em;
-            border: 1px solid rgba(255,255,255,0.15);
-            font-family: monospace;
-        }
-        .fee-estimate {
-            background: rgba(255,255,255,0.05);
-            padding: 1rem;
+        
+        .card {
+            background: var(--bg-card);
             border-radius: 12px;
-            margin-top: 1rem;
-            font-size: 0.9em;
+            border: 1px solid var(--border);
+            overflow: hidden;
         }
-        .fee-row {
-            display: flex;
-            justify-content: space-between;
-            margin-bottom: 0.5rem;
-            color: rgba(255,255,255,0.8);
-        }
-        .fee-row:last-child {
-            margin-bottom: 0;
-            border-top: 1px solid rgba(255,255,255,0.1);
-            padding-top: 0.5rem;
-            font-weight: 600;
-            color: #00d4ff;
-        }
-        .transaction-card {
-            background: rgba(255,255,255,0.05);
-            border: 1px solid rgba(255,255,255,0.1);
-            border-radius: 12px;
-            padding: 1.2rem;
-            margin-bottom: 1rem;
-        }
-        .tx-header {
+        
+        .card-header {
+            padding: 20px;
+            border-bottom: 1px solid var(--border);
             display: flex;
             justify-content: space-between;
             align-items: center;
-            margin-bottom: 0.8rem;
         }
-        .tx-status {
-            padding: 0.3rem 0.8rem;
-            border-radius: 20px;
-            font-size: 0.75em;
-            font-weight: 600;
-        }
-        .tx-status.pending {
-            background: rgba(251,191,36,0.2);
-            color: #fbbf24;
-        }
-        .tx-status.completed {
-            background: rgba(16,185,129,0.2);
-            color: #10b981;
-        }
-        .tx-status.failed {
-            background: rgba(239,68,68,0.2);
-            color: #ef4444;
-        }
-        .settings-card {
-            background: rgba(255,255,255,0.05);
-            border: 1px solid rgba(255,255,255,0.1);
-            border-radius: 12px;
-            padding: 1.5rem;
-            margin-bottom: 1rem;
-        }
-        .settings-row {
+        
+        .card-title {
             display: flex;
-            justify-content: space-between;
             align-items: center;
-            padding: 1rem 0;
-            border-bottom: 1px solid rgba(255,255,255,0.1);
+            gap: 10px;
+            font-size: 1.2rem;
         }
-        .settings-row:last-child {
-            border-bottom: none;
-        }
-        .toggle {
+        
+        .code-container {
             position: relative;
-            width: 50px;
-            height: 26px;
-            background: rgba(255,255,255,0.2);
-            border-radius: 26px;
-            cursor: pointer;
-            transition: all 0.3s;
         }
-        .toggle.active {
-            background: #10b981;
-        }
-        .toggle::after {
-            content: '';
+        
+        .code-toolbar {
             position: absolute;
+            top: 10px;
+            right: 10px;
+            z-index: 10;
+            display: flex;
+            gap: 8px;
+        }
+        
+        .icon-btn {
+            width: 36px;
+            height: 36px;
+            background: rgba(30, 41, 59, 0.9);
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            color: var(--text);
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s;
+        }
+        
+        .icon-btn:hover {
+            background: var(--primary);
+            border-color: var(--primary);
+        }
+        
+        .code-editor {
+            width: 100%;
+            height: 500px;
+            background: #1a1f36;
+            color: #e2e8f0;
+            font-family: 'Monaco', 'Consolas', monospace;
+            font-size: 14px;
+            line-height: 1.5;
+            padding: 20px;
+            border: none;
+            resize: none;
+            tab-size: 2;
+            white-space: pre;
+            overflow: auto;
+        }
+        
+        .console {
+            height: 300px;
+            overflow-y: auto;
+            padding: 20px;
+            background: #0f1525;
+            font-family: 'Monaco', 'Consolas', monospace;
+            font-size: 13px;
+        }
+        
+        .log {
+            margin-bottom: 8px;
+            padding: 6px 0;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+        }
+        
+        .log.info { color: #60a5fa; }
+        .log.success { color: var(--success); }
+        .log.error { color: var(--error); }
+        .log.warning { color: var(--warning); }
+        
+        .form-section {
+            padding: 20px;
+        }
+        
+        .form-group {
+            margin-bottom: 20px;
+        }
+        
+        label {
+            display: block;
+            margin-bottom: 8px;
+            color: #cbd5e1;
+            font-weight: 500;
+        }
+        
+        input, select, textarea {
+            width: 100%;
+            padding: 12px;
+            background: rgba(15, 23, 42, 0.7);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            color: var(--text);
+            font-size: 14px;
+        }
+        
+        textarea {
+            min-height: 100px;
+            resize: vertical;
+            font-family: 'Monaco', 'Consolas', monospace;
+        }
+        
+        .btn {
+            padding: 14px 28px;
+            background: var(--primary);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            transition: all 0.2s;
+        }
+        
+        .btn:hover:not(:disabled) {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 25px rgba(99, 102, 241, 0.3);
+        }
+        
+        .btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+        
+        .btn-full {
+            width: 100%;
+            margin-top: 20px;
+        }
+        
+        .btn-secondary {
+            background: transparent;
+            border: 1px solid var(--border);
+        }
+        
+        .network-selector {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+        
+        .network-btn {
+            flex: 1;
+            padding: 12px;
+            background: rgba(15, 23, 42, 0.5);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            color: #94a3b8;
+            cursor: pointer;
+            text-align: center;
+            transition: all 0.2s;
+        }
+        
+        .network-btn.active {
+            background: var(--primary);
+            color: white;
+            border-color: var(--primary);
+        }
+        
+        .status-bar {
+            display: flex;
+            justify-content: space-between;
+            padding: 15px 20px;
+            background: var(--bg-card);
+            border-top: 1px solid var(--border);
+            font-size: 13px;
+            color: #94a3b8;
+        }
+        
+        .status-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .result-card {
+            background: rgba(16, 185, 129, 0.1);
+            border: 1px solid var(--success);
+            border-radius: 8px;
+            padding: 20px;
+            margin-top: 20px;
+        }
+        
+        .result-header {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 15px;
+        }
+        
+        .result-details {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+            font-size: 14px;
+        }
+        
+        .detail-item {
+            background: rgba(15, 23, 42, 0.5);
+            padding: 12px;
+            border-radius: 6px;
+        }
+        
+        .detail-label {
+            color: #94a3b8;
+            font-size: 12px;
+            margin-bottom: 4px;
+        }
+        
+        .loader {
+            display: inline-block;
             width: 20px;
             height: 20px;
+            border: 3px solid rgba(255, 255, 255, 0.3);
             border-radius: 50%;
-            background: white;
-            top: 3px;
-            left: 3px;
-            transition: all 0.3s;
+            border-top-color: var(--primary);
+            animation: spin 1s ease-in-out infinite;
         }
-        .toggle.active::after {
-            left: 27px;
+        
+        @keyframes spin {
+            to { transform: rotate(360deg); }
         }
-        .hide { display: none !important; }
+        
+        .file-upload {
+            border: 2px dashed var(--border);
+            border-radius: 8px;
+            padding: 30px 20px;
+            text-align: center;
+            cursor: pointer;
+            margin-bottom: 20px;
+            transition: all 0.2s;
+        }
+        
+        .file-upload:hover {
+            border-color: var(--primary);
+            background: rgba(99, 102, 241, 0.05);
+        }
+        
+        .toast {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 16px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            min-width: 300px;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.3);
+            animation: slideIn 0.3s ease;
+            z-index: 1000;
+        }
+        
+        .toast.success { border-left: 4px solid var(--success); }
+        .toast.error { border-left: 4px solid var(--error); }
+        
+        @keyframes slideIn {
+            from { transform: translateX(100%); opacity: 0; }
+            to { transform: translateX(0); opacity: 1; }
+        }
+        
+        .tab-group {
+            display: flex;
+            gap: 5px;
+            margin-bottom: 15px;
+            border-bottom: 1px solid var(--border);
+        }
+        
+        .tab-btn {
+            padding: 10px 20px;
+            background: transparent;
+            border: none;
+            color: #94a3b8;
+            cursor: pointer;
+            border-bottom: 2px solid transparent;
+            transition: all 0.2s;
+        }
+        
+        .tab-btn.active {
+            color: var(--primary);
+            border-bottom-color: var(--primary);
+        }
+        
+        .tab-content {
+            display: none;
+        }
+        
+        .tab-content.active {
+            display: block;
+        }
+        
+        .file-info {
+            background: rgba(99, 102, 241, 0.1);
+            border: 1px solid var(--primary);
+            border-radius: 6px;
+            padding: 12px;
+            margin-top: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
     </style>
 </head>
 <body>
     <div class="container">
-        <h1>🌉 Zeko Ultimate Bridge</h1>
-        <div class="subtitle">Complete Multi-Chain Bridge Platform</div>
-        
-        <div class="nav-tabs">
-            <button class="nav-tab active" onclick="switchPage('home')">🏠 Home</button>
-            <button class="nav-tab" onclick="switchPage('bridge')">🌉 Bridge</button>
-            <button class="nav-tab" onclick="switchPage('history')">📜 History</button>
-            <button class="nav-tab" onclick="switchPage('settings')">⚙️ Settings</button>
-        </div>
-
-        <div id="homePage" class="page active">
-            <div class="sdk-info">
-                <strong>Active SDKs:</strong> ethers.js v6.13.2 | web3.js v4.16.0 | axios v1.7.7 | WalletConnect v1.8.0
-                <div class="api-status" id="apiStatus"></div>
+        <header>
+            <div class="logo">
+                <i data-lucide="rocket"></i>
+                <h1>Mina Universal Deployer</h1>
             </div>
-            
-            <div class="wallet-detection" id="walletDetection">
-                <strong>🔍 Wallet Detection:</strong>
-                <div id="detectedList"></div>
-            </div>
-
-            <div id="connectSection">
-                <div class="connect-options">
-                    <div class="connect-btn" onclick="connectBrowserWallet()">
-                        <div class="icon">🦊</div>
-                        <div class="name">Browser Wallet</div>
-                        <div class="desc">MetaMask, Brave, etc</div>
-                    </div>
-                    
-                    <div class="connect-btn" onclick="connectWalletConnect()">
-                        <div class="icon">📱</div>
-                        <div class="name">WalletConnect</div>
-                        <div class="desc">Any Mobile Wallet</div>
-                    </div>
-                    
-                    <div class="connect-btn" onclick="connectCoinbase()">
-                        <div class="icon">💼</div>
-                        <div class="name">Coinbase</div>
-                        <div class="desc">Coinbase Wallet</div>
-                    </div>
-                    
-                    <div class="connect-btn" onclick="connectMina()">
-                        <div class="icon">⚡</div>
-                        <div class="name">Mina/Auro</div>
-                        <div class="desc">zkApp Protocol</div>
-                    </div>
-
-                    <div class="connect-btn" onclick="connectZcash()">
-                        <div class="icon">🛡️</div>
-                        <div class="name">Zcash</div>
-                        <div class="desc">Shielded Privacy</div>
-                    </div>
-
-                    <div class="connect-btn" onclick="connectMonero()">
-                        <div class="icon">⚫</div>
-                        <div class="name">Monero</div>
-                        <div class="desc">RingCT Privacy</div>
-                    </div>
-                </div>
-            </div>
-
-            <div id="walletInfo" class="wallet-info hide">
-                <div class="info-row">
-                    <span class="info-label">Wallet</span>
-                    <span class="info-value" id="walletType"></span>
-                </div>
-                <div class="info-row">
-                    <span class="info-label">Address</span>
-                    <span class="info-value" id="walletAddr"></span>
-                </div>
-                <div class="info-row">
-                    <span class="info-label">Network</span>
-                    <span class="info-value" id="networkInfo"></span>
-                </div>
-                <div class="info-row">
-                    <span class="info-label">Balance</span>
-                    <span class="info-value" id="balanceInfo"></span>
-                </div>
-                <button class="btn btn-secondary" onclick="disconnectWallet()">Disconnect Wallet</button>
-            </div>
-        </div>
-
-        <div id="bridgePage" class="page">
-            <div id="bridgeSection" class="bridge-section">
-                <div class="chain-selector">
-                    <div class="chain-box">
-                        <div class="input-label">From Chain</div>
-                        <select id="fromChain" onchange="updateApiInfo()">
-                            <option value="eth">Ethereum Mainnet</option>
-                            <option value="sepolia">Sepolia Testnet</option>
-                            <option value="polygon">Polygon</option>
-                            <option value="arbitrum">Arbitrum One</option>
-                            <option value="optimism">Optimism</option>
-                            <option value="base">Base</option>
-                            <option value="bsc">BNB Chain</option>
-                            <option value="mannit">Mannit Testnet</option>
-                            <option value="mina">Mina Protocol</option>
-                            <option value="zeko">Zeko zkRollup</option>
-                            <option value="zcash">Zcash</option>
-                            <option value="xmr">Monero</option>
-                        </select>
-                        <div class="api-badge" id="fromRpc" style="margin-top: 0.5rem;"></div>
-                    </div>
-                    
-                    <button class="swap-btn" onclick="swapChains()">⇄</button>
-                    
-                    <div class="chain-box">
-                        <div class="input-label">To Chain</div>
-                        <select id="toChain" onchange="updateApiInfo()">
-                            <option value="polygon" selected>Polygon</option>
-                            <option value="eth">Ethereum Mainnet</option>
-                            <option value="sepolia">Sepolia Testnet</option>
-                            <option value="arbitrum">Arbitrum One</option>
-                            <option value="optimism">Optimism</option>
-                            <option value="base">Base</option>
-                            <option value="bsc">BNB Chain</option>
-                            <option value="mannit">Mannit Testnet</option>
-                            <option value="mina">Mina Protocol</option>
-                            <option value="zeko">Zeko zkRollup</option>
-                            <option value="zcash">Zcash</option>
-                            <option value="xmr">Monero</option>
-                        </select>
-                        <div class="api-badge" id="toRpc" style="margin-top: 0.5rem;"></div>
-                    </div>
-                </div>
-                
-                <div class="input-group">
-                    <label class="input-label">Amount</label>
-                    <input type="number" id="amount" placeholder="0.0" step="0.0001">
-                    <button class="max-btn" onclick="setMaxAmount()">MAX</button>
-                </div>
-
-                <div class="input-group">
-                    <label class="input-label">Recipient (optional)</label>
-                    <input type="text" id="recipient" placeholder="Leave blank to use your address">
-                </div>
-
-                <div class="fee-estimate" id="feeEstimate" style="display: none;">
-                    <div class="fee-row">
-                        <span>Bridge Fee:</span>
-                        <span id="bridgeFee">0.001 ETH</span>
-                    </div>
-                    <div class="fee-row">
-                        <span>Gas Fee:</span>
-                        <span id="gasFee">~0.0015 ETH</span>
-                    </div>
-                    <div class="fee-row">
-                        <span>Total:</span>
-                        <span id="totalFee">~0.0025 ETH</span>
-                    </div>
-                </div>
-                
-                <button class="btn btn-primary" id="bridgeBtn" onclick="executeBridge()">
-                    Execute Bridge
+            <div class="wallet-section">
+                <button class="wallet-btn" onclick="connectWallet()" id="connectBtn">
+                    <i data-lucide="wallet"></i>
+                    <span id="walletStatus">Connect Wallet</span>
                 </button>
-
-                <button class="btn btn-secondary" onclick="switchToFromChain()">
-                    Switch to Source Chain
+                <button class="wallet-btn" onclick="disconnectWallet()" id="disconnectBtn" style="display: none;">
+                    <i data-lucide="log-out"></i>
                 </button>
             </div>
+        </header>
+
+        <div class="network-selector">
+            <button class="network-btn active" onclick="setNetwork('devnet')" data-network="devnet">
+                <i data-lucide="test-tube"></i> Devnet
+            </button>
+            <button class="network-btn" onclick="setNetwork('testnet')" data-network="testnet">
+                <i data-lucide="shield"></i> Testnet
+            </button>
+            <button class="network-btn" onclick="setNetwork('mainnet')" data-network="mainnet">
+                <i data-lucide="globe"></i> Mainnet
+            </button>
         </div>
 
-        <div id="historyPage" class="page">
-            <h2 style="margin-bottom: 1.5rem; color: #00d4ff;">Transaction History</h2>
-            <div id="transactionHistory"></div>
-        </div>
-
-        <div id="settingsPage" class="page">
-            <h2 style="margin-bottom: 1.5rem; color: #00d4ff;">Settings</h2>
-            
-            <div class="settings-card">
-                <h3 style="margin-bottom: 1rem; color: rgba(255,255,255,0.9);">Bridge Settings</h3>
+        <div class="main-grid">
+            <div class="card">
+                <div class="card-header">
+                    <div class="card-title">
+                        <i data-lucide="code"></i>
+                        Contract Source
+                    </div>
+                    <div class="code-toolbar">
+                        <button class="icon-btn" onclick="formatCode()" title="Format code">
+                            <i data-lucide="align-left"></i>
+                        </button>
+                        <button class="icon-btn" onclick="clearCode()" title="Clear editor">
+                            <i data-lucide="trash-2"></i>
+                        </button>
+                        <button class="icon-btn" onclick="saveCode()" title="Save to file">
+                            <i data-lucide="download"></i>
+                        </button>
+                    </div>
+                </div>
                 
-                <div class="settings-row">
-                    <div>
-                        <div style="font-weight: 600; margin-bottom: 0.3rem;">Auto-approve transactions</div>
-                        <div style="font-size: 0.85em; color: rgba(255,255,255,0.6);">Skip confirmation for small amounts</div>
+                <div class="form-section" style="padding-bottom: 0;">
+                    <div class="tab-group">
+                        <button class="tab-btn active" onclick="switchTab('write')" data-tab="write">Write Code</button>
+                        <button class="tab-btn" onclick="switchTab('upload')" data-tab="upload">Upload Contract</button>
                     </div>
-                    <div class="toggle" onclick="toggleSetting(this)"></div>
                 </div>
+                
+                <div class="code-container tab-content active" id="writeTab">
+                    <textarea id="codeEditor" class="code-editor" spellcheck="false">import { SmartContract, method, state, State, Field, PublicKey } from 'o1js';
 
-                <div class="settings-row">
-                    <div>
-                        <div style="font-weight: 600; margin-bottom: 0.3rem;">Gas optimization</div>
-                        <div style="font-size: 0.85em; color: rgba(255,255,255,0.6);">Use optimal gas settings automatically</div>
-                    </div>
-                    <div class="toggle active" onclick="toggleSetting(this)"></div>
+export class MyContract extends SmartContract {
+  @state(Field) value = State();
+  @state(PublicKey) admin = State();
+  
+  init() {
+    super.init();
+    this.value.set(Field(0));
+    this.admin.set(this.sender.getAndRequireSignatureV2());
+  }
+  
+  @method async update(newValue: Field) {
+    const admin = this.admin.getAndRequireEquals();
+    const sender = this.sender.getAndRequireSignatureV2();
+    admin.assertEquals(sender);
+    this.value.set(newValue);
+  }
+}</textarea>
                 </div>
-
-                <div class="settings-row">
-                    <div>
-                        <div style="font-weight: 600; margin-bottom: 0.3rem;">Privacy mode</div>
-                        <div style="font-size: 0.85em; color: rgba(255,255,255,0.6);">Hide transaction amounts</div>
+                
+                <div class="tab-content" id="uploadTab" style="padding: 20px;">
+                    <div class="file-upload" onclick="document.getElementById('fileInput').click()">
+                        <i data-lucide="upload-cloud" style="width: 48px; height: 48px; margin: 0 auto 15px; color: var(--primary);"></i>
+                        <p style="font-size: 16px; margin-bottom: 5px;">Click to upload contract</p>
+                        <p style="font-size: 13px; color: #94a3b8;">Supports .js, .ts, or pre-compiled build.json</p>
                     </div>
-                    <div class="toggle" onclick="toggleSetting(this)"></div>
+                    <input type="file" id="fileInput" accept=".js,.ts,.json" style="display: none;" onchange="handleFileUpload(event)">
+                    <div id="fileInfo" style="display: none;"></div>
                 </div>
             </div>
 
-            <div class="settings-card">
-                <h3 style="margin-bottom: 1rem; color: rgba(255,255,255,0.9);">Network Settings</h3>
-                
-                <div class="input-group">
-                    <label class="input-label">Default Slippage Tolerance (%)</label>
-                    <input type="number" value="0.5" step="0.1" min="0.1" max="5">
+            <div class="card">
+                <div class="card-header">
+                    <div class="card-title">
+                        <i data-lucide="settings"></i>
+                        Deployment Configuration
+                    </div>
                 </div>
-
-                <div class="input-group">
-                    <label class="input-label">Transaction Deadline (minutes)</label>
-                    <input type="number" value="20" step="1" min="1" max="60">
+                
+                <div class="form-section">
+                    <div class="form-group">
+                        <label><i data-lucide="key"></i> Deployer Private Key (Optional)</label>
+                        <input type="password" id="privateKey" placeholder="Leave empty to use connected wallet">
+                        <small style="color: #94a3b8; display: block; margin-top: 5px;">
+                            Connect wallet above for secure signing or enter private key
+                        </small>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label><i data-lucide="zap"></i> Fee (MINA)</label>
+                        <input type="number" id="fee" value="0.1" step="0.01" min="0.01">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label><i data-lucide="message-square"></i> Transaction Memo (Optional)</label>
+                        <input type="text" id="memo" value="" placeholder="Deployed via Mina Universal Deployer">
+                    </div>
+                    
+                    <button class="btn btn-full" onclick="deployContract()" id="deployBtn">
+                        <i data-lucide="rocket"></i> Deploy Contract
+                    </button>
+                </div>
+                
+                <div class="card-header">
+                    <div class="card-title">
+                        <i data-lucide="terminal"></i>
+                        Deployment Console
+                    </div>
+                    <div style="display: flex; gap: 8px;">
+                        <button class="icon-btn" onclick="clearConsole()">
+                            <i data-lucide="trash-2"></i>
+                        </button>
+                        <button class="icon-btn" onclick="exportLogs()">
+                            <i data-lucide="download"></i>
+                        </button>
+                    </div>
+                </div>
+                <div class="console" id="consoleOutput">
+                    <div class="log info">System initialized</div>
+                    <div class="log info">Ready to deploy contracts to Mina Protocol</div>
                 </div>
             </div>
-
-            <button class="btn btn-primary" onclick="saveSettings()">Save Settings</button>
         </div>
 
-        <div class="status-log" id="statusLog"></div>
+        <div class="card" style="margin-top: 30px; display: none;" id="resultsPanel">
+            <div class="card-header">
+                <div class="card-title">
+                    <i data-lucide="check-circle"></i>
+                    Deployment Results
+                </div>
+            </div>
+            <div class="form-section" id="resultsContent"></div>
+        </div>
+
+        <div class="status-bar">
+            <div class="status-item">
+                <i data-lucide="cpu"></i>
+                <span>Status: <span id="statusText">Ready</span></span>
+            </div>
+            <div class="status-item">
+                <i data-lucide="network"></i>
+                <span>Network: <span id="currentNetwork">Devnet</span></span>
+            </div>
+            <div class="status-item">
+                <i data-lucide="clock"></i>
+                <span id="currentTime">--:--:--</span>
+            </div>
+            <div class="status-item">
+                <i data-lucide="code"></i>
+                <span>o1js v1.9.0</span>
+            </div>
+        </div>
     </div>
 
     <script>
-        const CHAIN_CONFIG = {
-            eth: { name: 'Ethereum', rpc: 'https://eth.llamarpc.com', chainId: 1, explorer: 'https://etherscan.io', type: 'evm', contract: '0x742d35Cc6634C0532925a3b8D7De266CdDcBc6E4' },
-            sepolia: { name: 'Sepolia', rpc: 'https://eth-sepolia.g.alchemy.com/v2/demo', chainId: 11155111, explorer: 'https://sepolia.etherscan.io', type: 'evm', contract: '0x742d35Cc6634C0532925a3b8D7De266CdDcBc6E4' },
-            polygon: { name: 'Polygon', rpc: 'https://polygon.llamarpc.com', chainId: 137, explorer: 'https://polygonscan.com', type: 'evm', contract: '0x742d35Cc6634C0532925a3b8D7De266CdDcBc6E4' },
-            arbitrum: { name: 'Arbitrum', rpc: 'https://arb1.arbitrum.io/rpc', chainId: 42161, explorer: 'https://arbiscan.io', type: 'evm', contract: '0x742d35Cc6634C0532925a3b8D7De266CdDcBc6E4' },
-            optimism: { name: 'Optimism', rpc: 'https://mainnet.optimism.io', chainId: 10, explorer: 'https://optimistic.etherscan.io', type: 'evm', contract: '0x742d35Cc6634C0532925a3b8D7De266CdDcBc6E4' },
-            base: { name: 'Base', rpc: 'https://mainnet.base.org', chainId: 8453, explorer: 'https://basescan.org', type: 'evm', contract: '0x742d35Cc6634C0532925a3b8D7De266CdDcBc6E4' },
-            bsc: { name: 'BSC', rpc: 'https://bsc-dataseed.binance.org', chainId: 56, explorer: 'https://bscscan.com', type: 'evm', contract: '0x742d35Cc6634C0532925a3b8D7De266CdDcBc6E4' },
-            mannit: { name: 'Mannit', rpc: 'https://rpc.mannit-testnet.xyz', chainId: 6969, explorer: 'https://explorer.mannit-testnet.xyz', type: 'evm', contract: '0x742d35Cc6634C0532925a3b8D7De266CdDcBc6E4' },
-            mina: { name: 'Mina', rpc: 'https://api.minascan.io/node/mainnet/v1/graphql', type: 'mina', explorer: 'https://minascan.io' },
-            zeko: { name: 'Zeko', rpc: 'https://api.minascan.io/node/devnet/v1/graphql', type: 'mina', explorer: 'https://zekoscan.io' },
-            zcash: { name: 'Zcash', rpc: 'http://localhost:8232', type: 'zcash', explorer: 'https://explorer.zcha.in' },
-            xmr: { name: 'Monero', rpc: 'http://localhost:18082', type: 'xmr', explorer: 'https://xmrchain.net' }
-        };
-
-        let state = {
-            provider: null,
-            signer: null,
-            web3: null,
-            wcProvider: null,
-            address: null,
-            balance: null,
-            connected: false,
-            walletName: '',
-            connectionType: '',
-            transactions: []
-        };
-
-        function switchPage(pageName) {
-            document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
-            document.querySelectorAll('.nav-tab').forEach(t => t.classList.remove('active'));
-            document.getElementById(pageName + 'Page').classList.add('active');
-            event.target.classList.add('active');
-            if (pageName === 'bridge' && !state.connected) {
-                log('⚠️ Connect wallet first', 'warning');
-                setTimeout(() => {
-                    document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
-                    document.querySelectorAll('.nav-tab').forEach(t => t.classList.remove('active'));
-                    document.getElementById('homePage').classList.add('active');
-                    document.querySelectorAll('.nav-tab')[0].classList.add('active');
-                }, 500);
+        lucide.createIcons();
+        
+        let currentNetwork = 'devnet';
+        let connectedWallet = null;
+        let deploymentHistory = [];
+        let logs = [];
+        let uploadedContract = null;
+        let uploadedBuild = null;
+        let currentTab = 'write';
+        
+        const NETWORK_CONFIG = {
+            devnet: {
+                name: 'Devnet',
+                networkID: 'mina:devnet',
+                graphql: 'https://api.minascan.io/node/devnet/v1/graphql',
+                explorer: 'https://minascan.io/devnet'
+            },
+            testnet: {
+                name: 'Testnet',
+                networkID: 'mina:testnet',
+                graphql: 'https://api.minascan.io/node/testworld/v1/graphql',
+                explorer: 'https://minascan.io/testworld'
+            },
+            mainnet: {
+                name: 'Mainnet',
+                networkID: 'mina:mainnet',
+                graphql: 'https://api.minascan.io/node/mainnet/v1/graphql',
+                explorer: 'https://minascan.io/mainnet'
             }
-            if (pageName === 'history') loadTransactionHistory();
+        };
+        
+        function updateClock() {
+            document.getElementById('currentTime').textContent = 
+                new Date().toLocaleTimeString('en-US', { hour12: false });
         }
-
-        function log(message, type = 'info') {
-            const timestamp = new Date().toLocaleTimeString();
-            const entry = document.createElement('div');
-            entry.className = `log-entry ${type}`;
-            entry.innerHTML = `<span class="timestamp">[${timestamp}]</span>${message}`;
-            const logDiv = document.getElementById('statusLog');
-            logDiv.appendChild(entry);
-            logDiv.scrollTop = logDiv.scrollHeight;
+        setInterval(updateClock, 1000);
+        updateClock();
+        
+        function switchTab(tab) {
+            currentTab = tab;
+            document.querySelectorAll('.tab-btn').forEach(btn => {
+                btn.classList.toggle('active', btn.dataset.tab === tab);
+            });
+            document.querySelectorAll('.tab-content').forEach(content => {
+                content.classList.toggle('active', content.id === tab + 'Tab');
+            });
+            lucide.createIcons();
         }
-
-        function detectWallets() {
-            const detected = [];
-            if (typeof window.ethereum !== 'undefined') {
-                if (window.ethereum.isMetaMask) detected.push('MetaMask');
-                if (window.ethereum.isCoinbaseWallet) detected.push('Coinbase Wallet');
-                if (window.ethereum.isTrust) detected.push('Trust Wallet');
-                if (window.ethereum.isBraveWallet) detected.push('Brave Wallet');
-                if (window.ethereum.isRabby) detected.push('Rabby');
-                if (!detected.length) detected.push('Browser Wallet');
-            }
-            if (typeof window.mina !== 'undefined') detected.push('Auro Wallet');
-            detected.push('WalletConnect (Mobile)');
+        
+        function handleFileUpload(event) {
+            const file = event.target.files[0];
+            if (!file) return;
             
-            document.getElementById('detectedList').innerHTML = detected.map(w => 
-                `<div class="detected-wallet">✅ ${w}</div>`
-            ).join('');
-            log(`Detected: ${detected.join(', ')}`, 'success');
-        }
-
-        function updateApiInfo() {
-            const from = document.getElementById('fromChain').value;
-            const to = document.getElementById('toChain').value;
-            document.getElementById('fromRpc').textContent = CHAIN_CONFIG[from].rpc.substring(0, 35) + '...';
-            document.getElementById('toRpc').textContent = CHAIN_CONFIG[to].rpc.substring(0, 35) + '...';
-            document.getElementById('apiStatus').innerHTML = `
-                <div class="api-badge">From: ${CHAIN_CONFIG[from].name}</div>
-                <div class="api-badge">To: ${CHAIN_CONFIG[to].name}</div>
-            `;
-            estimateFees();
-        }
-
-        function estimateFees() {
-            document.getElementById('bridgeFee').textContent = '0.001 ETH';
-            document.getElementById('gasFee').textContent = '~0.0015 ETH';
-            document.getElementById('totalFee').textContent = '~0.0025 ETH';
-            document.getElementById('feeEstimate').style.display = 'block';
-        }
-
-        async function connectBrowserWallet() {
-            try {
-                log('🔄 Connecting to browser wallet...', 'info');
-                if (typeof window.ethereum === 'undefined') {
-                    throw new Error('No browser wallet found. Install MetaMask or use WalletConnect.');
-                }
-                state.provider = new ethers.BrowserProvider(window.ethereum);
-                await state.provider.send("eth_requestAccounts", []);
-                state.signer = await state.provider.getSigner();
-                state.address = await state.signer.getAddress();
-                const network = await state.provider.getNetwork();
-                state.balance = await state.provider.getBalance(state.address);
+            const reader = new FileReader();
+            reader.onload = async (e) => {
+                const content = e.target.result;
                 
-                if (window.ethereum.isMetaMask) state.walletName = 'MetaMask';
-                else if (window.ethereum.isCoinbaseWallet) state.walletName = 'Coinbase';
-                else if (window.ethereum.isTrust) state.walletName = 'Trust';
-                else state.walletName = 'Browser Wallet';
-                
-                state.connectionType = 'browser';
-                await showConnectedState(Number(network.chainId));
-
-                window.ethereum.on('accountsChanged', () => {
-                    log('👤 Account changed, refreshing...', 'warning');
-                    setTimeout(() => location.reload(), 1000);
-                });
-                window.ethereum.on('chainChanged', () => {
-                    log('🔗 Chain changed, refreshing...', 'warning');
-                    setTimeout(() => location.reload(), 1000);
-                });
-            } catch (error) {
-                log(`❌ ${error.message}`, 'error');
-            }
-        }
-
-        async function connectWalletConnect() {
-            try {
-                log('📱 Opening WalletConnect...', 'info');
-                log('📲 Scan QR code with your mobile wallet', 'info');
-                state.wcProvider = new WalletConnectProvider.default({
-                    rpc: {
-                        1: CHAIN_CONFIG.eth.rpc,
-                        137: CHAIN_CONFIG.polygon.rpc,
-                        42161: CHAIN_CONFIG.arbitrum.rpc,
-                        10: CHAIN_CONFIG.optimism.rpc,
-                        8453: CHAIN_CONFIG.base.rpc,
-                        56: CHAIN_CONFIG.bsc.rpc,
-                        6969: CHAIN_CONFIG.mannit.rpc
-                    },
-                    chainId: 1
-                });
-                await state.wcProvider.enable();
-                state.provider = new ethers.BrowserProvider(state.wcProvider);
-                state.signer = await state.provider.getSigner();
-                state.address = await state.signer.getAddress();
-                const network = await state.provider.getNetwork();
-                state.balance = await state.provider.getBalance(state.address);
-                state.walletName = 'WalletConnect';
-                state.connectionType = 'walletconnect';
-                await showConnectedState(Number(network.chainId));
-                state.wcProvider.on("disconnect", () => {
-                    log('❌ WalletConnect disconnected', 'warning');
-                    location.reload();
-                });
-            } catch (error) {
-                log(`❌ WalletConnect: ${error.message}`, 'error');
-            }
-        }
-
-        async function connectCoinbase() {
-            try {
-                log('💼 Connecting to Coinbase Wallet...', 'info');
-                if (typeof window.ethereum === 'undefined' || !window.ethereum.isCoinbaseWallet) {
-                    throw new Error('Coinbase Wallet not found');
-                }
-                state.provider = new ethers.BrowserProvider(window.ethereum);
-                await state.provider.send("eth_requestAccounts", []);
-                state.signer = await state.provider.getSigner();
-                state.address = await state.signer.getAddress();
-                const network = await state.provider.getNetwork();
-                state.balance = await state.provider.getBalance(state.address);
-                state.walletName = 'Coinbase Wallet';
-                state.connectionType = 'browser';
-                await showConnectedState(Number(network.chainId));
-            } catch (error) {
-                log(`❌ ${error.message}`, 'error');
-            }
-        }
-
-        async function connectMina() {
-            try {
-                if (typeof window.mina === 'undefined') {
-                    throw new Error('Auro Wallet not found. Install from aurowallet.com');
-                }
-                log('⚡ Connecting to Auro Wallet...', 'info');
-                const accounts = await window.mina.requestAccounts();
-                state.address = accounts[0];
-                const network = await window.mina.requestNetwork();
-                document.getElementById('walletType').textContent = 'Auro Wallet';
-                document.getElementById('walletAddr').textContent = `${state.address.slice(0,8)}...${state.address.slice(-6)}`;
-                document.getElementById('networkInfo').textContent = `Mina ${network.networkID}`;
-                document.getElementById('balanceInfo').textContent = 'Connected';
-                document.getElementById('walletInfo').classList.remove('hide');
-                document.getElementById('connectSection').classList.add('hide');
-                state.connected = true;
-                state.walletName = 'Auro Wallet';
-                state.connectionType = 'mina';
-                updateApiInfo();
-                log(`✅ Connected to Mina Protocol`, 'success');
-                log(`📍 Address: ${state.address}`, 'info');
-            } catch (error) {
-                log(`❌ Mina: ${error.message}`, 'error');
-            }
-        }
-
-        async function connectZcash() {
-            try {
-                log('🛡️ Zcash requires local zcashd node', 'warning');
-                log('📥 Install: https://z.cash/download', 'info');
-                log('▶️ Run: zcashd -daemon', 'info');
-                document.getElementById('walletType').textContent = 'Zcash (Local Node)';
-                document.getElementById('walletAddr').textContent = 'zcashd RPC';
-                document.getElementById('networkInfo').textContent = 'Sapling/Orchard';
-                document.getElementById('balanceInfo').textContent = 'localhost:8232';
-                document.getElementById('walletInfo').classList.remove('hide');
-                document.getElementById('connectSection').classList.add('hide');
-                state.connected = true;
-                state.walletName = 'Zcash';
-                state.connectionType = 'zcash';
-                updateApiInfo();
-            } catch (error) {
-                log(`❌ Zcash: ${error.message}`, 'error');
-            }
-        }
-
-        async function connectMonero() {
-            try {
-                log('⚫ Monero requires monero-wallet-rpc', 'warning');
-                log('📥 Install: https://getmonero.org/downloads', 'info');
-                log('▶️ Run: monero-wallet-rpc --rpc-bind-port 18082', 'info');
-                document.getElementById('walletType').textContent = 'Monero (Local Node)';
-                document.getElementById('walletAddr').textContent = 'wallet-rpc';
-                document.getElementById('networkInfo').textContent = 'RingCT Privacy';
-                document.getElementById('balanceInfo').textContent = 'localhost:18082';
-                document.getElementById('walletInfo').classList.remove('hide');
-                document.getElementById('connectSection').classList.add('hide');
-                state.connected = true;
-                state.walletName = 'Monero';
-                state.connectionType = 'xmr';
-                updateApiInfo();
-            } catch (error) {
-                log(`❌ Monero: ${error.message}`, 'error');
-            }
-        }
-
-        async function showConnectedState(chainId) {
-            const chainInfo = Object.values(CHAIN_CONFIG).find(c => c.chainId === chainId);
-            const chainName = chainInfo ? chainInfo.name : `Chain ${chainId}`;
-            document.getElementById('walletType').textContent = state.walletName;
-            document.getElementById('walletAddr').textContent = `${state.address.slice(0,6)}...${state.address.slice(-4)}`;
-            document.getElementById('networkInfo').textContent = chainName;
-            document.getElementById('balanceInfo').textContent = `${ethers.formatEther(state.balance).slice(0, 8)} ETH`;
-            document.getElementById('walletInfo').classList.remove('hide');
-            document.getElementById('connectSection').classList.add('hide');
-            state.connected = true;
-            updateApiInfo();
-            log(`✅ Connected to ${state.walletName}`, 'success');
-            log(`📍 Address: ${state.address}`, 'info');
-            log(`🌐 Network: ${chainName}`, 'info');
-            log(`💰 Balance: ${ethers.formatEther(state.balance).slice(0, 8)} ETH`, 'info');
-        }
-
-        function disconnectWallet() {
-            if (state.wcProvider) state.wcProvider.disconnect();
-            location.reload();
-        }
-
-        async function setMaxAmount() {
-            if (!state.connected || !state.balance) {
-                log('⚠️ Connect wallet first', 'warning');
-                return;
-            }
-            const gasReserve = ethers.parseEther('0.005');
-            const maxAmount = state.balance > gasReserve ? state.balance - gasReserve : 0n;
-            document.getElementById('amount').value = ethers.formatEther(maxAmount);
-            log('✅ Max amount set (0.005 ETH reserved for gas)', 'info');
-        }
-
-        function swapChains() {
-            const from = document.getElementById('fromChain');
-            const to = document.getElementById('toChain');
-            [from.value, to.value] = [to.value, from.value];
-            updateApiInfo();
-            log('🔄 Chains swapped', 'info');
-        }
-
-        async function switchToFromChain() {
-            const from = document.getElementById('fromChain').value;
-            const fromConfig = CHAIN_CONFIG[from];
-            if (fromConfig.type !== 'evm') {
-                log('⚠️ Chain switching only for EVM chains', 'warning');
-                return;
-            }
-            if (!state.provider) {
-                log('⚠️ Connect wallet first', 'warning');
-                return;
-            }
-            try {
-                log(`🔄 Switching to ${fromConfig.name}...`, 'info');
-                await window.ethereum.request({
-                    method: 'wallet_switchEthereumChain',
-                    params: [{ chainId: '0x' + fromConfig.chainId.toString(16) }]
-                });
-                log(`✅ Switched to ${fromConfig.name}`, 'success');
-            } catch (error) {
-                if (error.code === 4902) {
-                    await addChainToWallet(from);
+                if (file.name.endsWith('.json')) {
+                    try {
+                        uploadedBuild = JSON.parse(content);
+                        uploadedContract = null;
+                        log(`Loaded pre-compiled build: ${file.name}`, 'success');
+                        document.getElementById('fileInfo').innerHTML = `
+                            <div class="file-info">
+                                <span><i data-lucide="file-check"></i> ${file.name} (Pre-compiled)</span>
+                                <button class="icon-btn" onclick="clearUpload()" style="width: 28px; height: 28px;">
+                                    <i data-lucide="x"></i>
+                                </button>
+                            </div>
+                        `;
+                        document.getElementById('fileInfo').style.display = 'block';
+                        lucide.createIcons();
+                    } catch (err) {
+                        log(`Invalid build.json format: ${err.message}`, 'error');
+                    }
                 } else {
-                    log(`❌ Switch failed: ${error.message}`, 'error');
-                }
-            }
-        }
-
-        async function addChainToWallet(chainKey) {
-            const config = CHAIN_CONFIG[chainKey];
-            try {
-                log(`➕ Adding ${config.name}...`, 'info');
-                await window.ethereum.request({
-                    method: 'wallet_addEthereumChain',
-                    params: [{
-                        chainId: '0x' + config.chainId.toString(16),
-                        chainName: config.name,
-                        rpcUrls: [config.rpc],
-                        nativeCurrency: { name: 'ETH', symbol: 'ETH', decimals: 18 },
-                        blockExplorerUrls: [config.explorer]
-                    }]
-                });
-                log(`✅ ${config.name} added`, 'success');
-            } catch (error) {
-                log(`❌ Failed: ${error.message}`, 'error');
-            }
-        }
-
-        async function executeBridge() {
-            if (!state.connected) {
-                log('❌ Connect wallet first', 'error');
-                return;
-            }
-            const from = document.getElementById('fromChain').value;
-            const to = document.getElementById('toChain').value;
-            const amount = document.getElementById('amount').value;
-            const recipient = document.getElementById('recipient').value;
-            if (!amount || parseFloat(amount) <= 0) {
-                log('❌ Enter valid amount', 'error');
-                return;
-            }
-            const fromConfig = CHAIN_CONFIG[from];
-            const toConfig = CHAIN_CONFIG[to];
-            log(`🌉 Bridge: ${fromConfig.name} → ${toConfig.name}`, 'info');
-            log(`💵 Amount: ${amount}`, 'info');
-            const btn = document.getElementById('bridgeBtn');
-            btn.disabled = true;
-            btn.textContent = 'Processing...';
-            try {
-                if (fromConfig.type === 'evm' && toConfig.type === 'evm') {
-                    await bridgeEVMtoEVM(from, to, amount, recipient);
-                } else if (fromConfig.type === 'evm' && toConfig.type === 'mina') {
-                    await bridgeEVMtoMina(from, to, amount, recipient);
-                } else if (fromConfig.type === 'mina' && toConfig.type === 'evm') {
-                    await bridgeMinaToEVM(from, to, amount, recipient);
-                } else if (fromConfig.type === 'mina' && toConfig.type === 'mina') {
-                    await bridgeMinaToMina(from, to, amount, recipient);
-                } else if (fromConfig.type === 'zcash' || toConfig.type === 'zcash') {
-                    await bridgeZcash(from, to, amount, recipient);
-                } else if (fromConfig.type === 'xmr' || toConfig.type === 'xmr') {
-                    await bridgeMonero(from, to, amount, recipient);
-                } else {
-                    throw new Error('Bridge path not supported');
-                }
-            } catch (error) {
-                log(`❌ Bridge failed: ${error.message}`, 'error');
-                btn.disabled = false;
-                btn.textContent = 'Execute Bridge';
-            }
-        }
-
-        async function bridgeEVMtoEVM(from, to, amount, recipient) {
-            const fromConfig = CHAIN_CONFIG[from];
-            const toConfig = CHAIN_CONFIG[to];
-            const network = await state.provider.getNetwork();
-            const currentChainId = Number(network.chainId);
-            if (currentChainId !== fromConfig.chainId) {
-                log(`🔄 Switching to ${fromConfig.name}...`, 'info');
-                await window.ethereum.request({
-                    method: 'wallet_switchEthereumChain',
-                    params: [{ chainId: '0x' + fromConfig.chainId.toString(16) }]
-                });
-                await new Promise(resolve => setTimeout(resolve, 1000));
-            }
-            log('📝 Creating bridge transaction...', 'info');
-            const recipientAddr = recipient || state.address;
-            const bridgeData = ethers.concat([
-                ethers.toUtf8Bytes('BRIDGE'),
-                ethers.zeroPadValue(ethers.toBeHex(toConfig.chainId), 32),
-                ethers.zeroPadValue(recipientAddr, 32)
-            ]);
-            const tx = await state.signer.sendTransaction({
-                to: fromConfig.contract,
-                value: ethers.parseEther(amount),
-                data: bridgeData
-            });
-            log(`✅ TX sent: ${tx.hash}`, 'success');
-            log(`🔍 Explorer: ${fromConfig.explorer}/tx/${tx.hash}`, 'info');
-            log('⏳ Waiting for confirmation...', 'info');
-            const receipt = await tx.wait();
-            log(`🎉 BRIDGE COMPLETE!`, 'success');
-            log(`📦 Block: ${receipt.blockNumber}`, 'info');
-            log(`⛽ Gas: ${receipt.gasUsed.toString()}`, 'info');
-            addTransaction({
-                hash: tx.hash,
-                from: fromConfig.name,
-                to: toConfig.name,
-                amount: amount,
-                status: 'completed',
-                timestamp: Date.now()
-            });
-            const btn = document.getElementById('bridgeBtn');
-            btn.textContent = '✅ Complete';
-            setTimeout(() => {
-                btn.disabled = false;
-                btn.textContent = 'Execute Bridge';
-            }, 3000);
-        }
-
-        async function bridgeEVMtoMina(from, to, amount, recipient) {
-            const fromConfig = CHAIN_CONFIG[from];
-            const toConfig = CHAIN_CONFIG[to];
-            log('⚡ EVM → Mina bridge...', 'info');
-            const network = await state.provider.getNetwork();
-            if (Number(network.chainId) !== fromConfig.chainId) {
-                await window.ethereum.request({
-                    method: 'wallet_switchEthereumChain',
-                    params: [{ chainId: '0x' + fromConfig.chainId.toString(16) }]
-                });
-            }
-            const minaRecipient = recipient || 'B62qnTDEeYtBHBePA4yhCt4TCgDtA4L2CGvK7PirbJyX4pKH8bmtWe5';
-            const bridgeData = ethers.toUtf8Bytes(`BRIDGE_TO_MINA:${minaRecipient}`);
-            const tx = await state.signer.sendTransaction({
-                to: fromConfig.contract,
-                value: ethers.parseEther(amount),
-                data: bridgeData
-            });
-            log(`✅ EVM TX: ${tx.hash}`, 'success');
-            await tx.wait();
-            try {
-                const response = await axios.post(toConfig.rpc, { query: `query { syncStatus }` });
-                log(`✅ Mina API connected`, 'success');
-            } catch (error) {
-                log(`⚠️ Mina API: ${error.message}`, 'warning');
-            }
-            addTransaction({ hash: tx.hash, from: fromConfig.name, to: toConfig.name, amount: amount, status: 'completed', timestamp: Date.now() });
-            const btn = document.getElementById('bridgeBtn');
-            btn.textContent = '✅ Bridge Initiated';
-            setTimeout(() => { btn.disabled = false; btn.textContent = 'Execute Bridge'; }, 3000);
-        }
-
-        async function bridgeMinaToEVM(from, to, amount, recipient) {
-            if (typeof window.mina === 'undefined') throw new Error('Auro Wallet required');
-            log('⚡ Mina → EVM bridge...', 'info');
-            const amountNano = Math.floor(parseFloat(amount) * 1e9);
-            const result = await window.mina.sendPayment({
-                to: 'B62qkYa1o6Mj6uTTjDQCob7FYZspuhkm4RRQhgJg9j4koEBWiSrTQrS',
-                amount: amountNano,
-                fee: 100000000,
-                memo: `BRIDGE_TO_EVM:${CHAIN_CONFIG[to].chainId}:${recipient || state.address}`
-            });
-            log(`✅ Mina TX: ${result.hash}`, 'success');
-            addTransaction({ hash: result.hash, from: CHAIN_CONFIG[from].name, to: CHAIN_CONFIG[to].name, amount: amount, status: 'completed', timestamp: Date.now() });
-            const btn = document.getElementById('bridgeBtn');
-            btn.textContent = '✅ Complete';
-            setTimeout(() => { btn.disabled = false; btn.textContent = 'Execute Bridge'; }, 3000);
-        }
-
-        async function bridgeMinaToMina(from, to, amount, recipient) {
-            if (typeof window.mina === 'undefined') throw new Error('Auro Wallet required');
-            log('⚡ Mina → Zeko zkRollup...', 'info');
-            const amountNano = Math.floor(parseFloat(amount) * 1e9);
-            const targetAddr = recipient || 'B62qnTDEeYtBHBePA4yhCt4TCgDtA4L2CGvK7PirbJyX4pKH8bmtWe5';
-            const result = await window.mina.sendPayment({ to: targetAddr, amount: amountNano, fee: 100000000, memo: 'ZEKO_ROLLUP' });
-            log(`✅ zkApp bridge: ${result.hash}`, 'success');
-            addTransaction({ hash: result.hash, from: CHAIN_CONFIG[from].name, to: CHAIN_CONFIG[to].name, amount: amount, status: 'completed', timestamp: Date.now() });
-            const btn = document.getElementById('bridgeBtn');
-            btn.textContent = '✅ Complete';
-            setTimeout(() => { btn.disabled = false; btn.textContent = 'Execute Bridge'; }, 3000);
-        }
-
-        async function bridgeZcash(from, to, amount, recipient) {
-            log('🛡️ Connecting to zcashd...', 'info');
-            try {
-                const response = await axios.post(CHAIN_CONFIG.zcash.rpc, {
-                    jsonrpc: '1.0', id: 'bridge', method: 'z_sendmany',
-                    params: ['from_addr', [{ address: recipient || 'zs1...', amount: parseFloat(amount) }]]
-                }, { auth: { username: 'user', password: 'pass' }, timeout: 5000 });
-                log(`✅ Zcash TX: ${response.data.result}`, 'success');
-                addTransaction({ hash: response.data.result, from: CHAIN_CONFIG[from].name, to: CHAIN_CONFIG[to].name, amount: amount, status: 'completed', timestamp: Date.now() });
-            } catch (error) {
-                log(`⚠️ zcashd not running (localhost:8232)`, 'warning');
-                throw new Error('zcashd RPC unavailable');
-            }
-            const btn = document.getElementById('bridgeBtn');
-            btn.textContent = '✅ Complete';
-            setTimeout(() => { btn.disabled = false; btn.textContent = 'Execute Bridge'; }, 3000);
-        }
-
-        async function bridgeMonero(from, to, amount, recipient) {
-            log('⚫ Connecting to monero-wallet-rpc...', 'info');
-            try {
-                const response = await axios.post(CHAIN_CONFIG.xmr.rpc + '/json_rpc', {
-                    jsonrpc: '2.0', id: '0', method: 'transfer',
-                    params: { destinations: [{ amount: Math.floor(parseFloat(amount) * 1e12), address: recipient || '4...' }], priority: 1, get_tx_key: true }
-                }, { timeout: 5000 });
-                log(`✅ Monero TX: ${response.data.result.tx_hash}`, 'success');
-                addTransaction({ hash: response.data.result.tx_hash, from: CHAIN_CONFIG[from].name, to: CHAIN_CONFIG[to].name, amount: amount, status: 'completed', timestamp: Date.now() });
-            } catch (error) {
-                log(`⚠️ monero-wallet-rpc not running (localhost:18082)`, 'warning');
-                throw new Error('monero-wallet-rpc unavailable');
-            }
-            const btn = document.getElementById('bridgeBtn');
-            btn.textContent = '✅ Complete';
-            setTimeout(() => { btn.disabled = false; btn.textContent = 'Execute Bridge'; }, 3000);
-        }
-
-        function addTransaction(tx) {
-            state.transactions.unshift(tx);
-            if (state.transactions.length > 20) state.transactions = state.transactions.slice(0, 20);
-        }
-
-        function loadTransactionHistory() {
-            const historyDiv = document.getElementById('transactionHistory');
-            if (state.transactions.length === 0) {
-                historyDiv.innerHTML = '<div style="text-align: center; padding: 2rem; color: rgba(255,255,255,0.5);">No transactions yet</div>';
-                return;
-            }
-            historyDiv.innerHTML = state.transactions.map(tx => `
-                <div class="transaction-card">
-                    <div class="tx-header">
-                        <div>
-                            <div style="font-weight: 600; margin-bottom: 0.5rem;">${tx.from} → ${tx.to}</div>
-                            <div style="font-size: 0.85em; color: rgba(255,255,255,0.6);">${new Date(tx.timestamp).toLocaleString()}</div>
+                    uploadedContract = content;
+                    uploadedBuild = null;
+                    log(`Loaded contract source: ${file.name}`, 'success');
+                    document.getElementById('fileInfo').innerHTML = `
+                        <div class="file-info">
+                            <span><i data-lucide="file-code"></i> ${file.name}</span>
+                            <button class="icon-btn" onclick="clearUpload()" style="width: 28px; height: 28px;">
+                                <i data-lucide="x"></i>
+                            </button>
                         </div>
-                        <div class="tx-status ${tx.status}">${tx.status.toUpperCase()}</div>
+                    `;
+                    document.getElementById('fileInfo').style.display = 'block';
+                    lucide.createIcons();
+                }
+            };
+            reader.readAsText(file);
+        }
+        
+        function clearUpload() {
+            uploadedContract = null;
+            uploadedBuild = null;
+            document.getElementById('fileInput').value = '';
+            document.getElementById('fileInfo').style.display = 'none';
+            log('Cleared uploaded file', 'info');
+        }
+        
+        function setNetwork(network) {
+            currentNetwork = network;
+            document.querySelectorAll('.network-btn').forEach(btn => {
+                btn.classList.toggle('active', btn.dataset.network === network);
+            });
+            document.getElementById('currentNetwork').textContent = NETWORK_CONFIG[network].name;
+            log(`Network switched to ${NETWORK_CONFIG[network].name}`, 'info');
+        }
+        
+        function log(message, type = 'info') {
+            const timestamp = new Date().toLocaleTimeString('en-US', { hour12: false });
+            logs.push({ timestamp, message, type });
+            
+            const consoleEl = document.getElementById('consoleOutput');
+            const logEl = document.createElement('div');
+            logEl.className = `log ${type}`;
+            logEl.textContent = `[${timestamp}] ${message}`;
+            consoleEl.appendChild(logEl);
+            consoleEl.scrollTop = consoleEl.scrollHeight;
+            
+            document.getElementById('statusText').textContent = 
+                type === 'error' ? 'Error' : 
+                type === 'success' ? 'Success' : 'Processing';
+        }
+        
+        function clearConsole() {
+            document.getElementById('consoleOutput').innerHTML = '';
+            logs = [];
+            log('Console cleared', 'info');
+        }
+        
+        function exportLogs() {
+            const logText = logs.map(l => `[${l.timestamp}] ${l.message}`).join('\n');
+            const blob = new Blob([logText], { type: 'text/plain' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `mina-deploy-logs-${Date.now()}.txt`;
+            a.click();
+            URL.revokeObjectURL(url);
+        }
+        
+        function formatCode() {
+            const editor = document.getElementById('codeEditor');
+            try {
+                let code = editor.value
+                    .replace(/\}\s*else\s*\{/g, '} else {')
+                    .replace(/\}\s*catch/g, '} catch')
+                    .replace(/\)\s*\{/g, ') {');
+                editor.value = code;
+                log('Code formatted', 'success');
+            } catch (e) {
+                log(`Format error: ${e.message}`, 'error');
+            }
+        }
+        
+        function clearCode() {
+            if (confirm('Clear editor?')) {
+                document.getElementById('codeEditor').value = '';
+                log('Editor cleared', 'info');
+            }
+        }
+        
+        function saveCode() {
+            const code = document.getElementById('codeEditor').value;
+            const blob = new Blob([code], { type: 'text/javascript' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `mina-contract-${Date.now()}.ts`;
+            a.click();
+            URL.revokeObjectURL(url);
+            log('Code saved to file', 'success');
+        }
+        
+        async function connectWallet() {
+            try {
+                if (!window.mina) {
+                    throw new Error('No Mina wallet found. Please install Auro Wallet or Pallad.');
+                }
+                
+                log('Requesting wallet connection...', 'info');
+                const accounts = await window.mina.requestAccounts();
+                
+                if (!accounts || accounts.length === 0) {
+                    throw new Error('No accounts found');
+                }
+                
+                connectedWallet = accounts[0];
+                document.getElementById('walletStatus').textContent = 
+                    `${connectedWallet.slice(0, 8)}...${connectedWallet.slice(-6)}`;
+                document.getElementById('connectBtn').disabled = true;
+                document.getElementById('disconnectBtn').style.display = 'flex';
+                
+                log(`Wallet connected: ${connectedWallet}`, 'success');
+                showToast('Wallet connected successfully', 'success');
+                
+                const networkInfo = await window.mina.requestNetwork();
+                if (networkInfo && networkInfo.networkID) {
+                    log(`Wallet network: ${networkInfo.networkID}`, 'info');
+                }
+            } catch (error) {
+                log(`Wallet connection failed: ${error.message}`, 'error');
+                showToast(error.message, 'error');
+            }
+        }
+        
+        function disconnectWallet() {
+            connectedWallet = null;
+            document.getElementById('walletStatus').textContent = 'Connect Wallet';
+            document.getElementById('connectBtn').disabled = false;
+            document.getElementById('disconnectBtn').style.display = 'none';
+            log('Wallet disconnected', 'info');
+        }
+        
+        function showToast(message, type = 'info') {
+            const toast = document.createElement('div');
+            toast.className = `toast ${type}`;
+            toast.innerHTML = `
+                <i data-lucide="${type === 'success' ? 'check-circle' : 'alert-circle'}"></i>
+                <span>${message}</span>
+                <button class="icon-btn" onclick="this.parentElement.remove()" style="margin-left: auto; width: 28px; height: 28px;">
+                    <i data-lucide="x"></i>
+                </button>
+            `;
+            document.body.appendChild(toast);
+            lucide.createIcons();
+            setTimeout(() => toast.remove(), 5000);
+        }
+        
+        async function deployContract() {
+            const btn = document.getElementById('deployBtn');
+            const originalHTML = btn.innerHTML;
+            
+            const privateKey = document.getElementById('privateKey').value.trim();
+            const fee = parseFloat(document.getElementById('fee').value) * 1e9;
+            const memo = document.getElementById('memo').value.trim();
+            
+            if (!privateKey && !connectedWallet) {
+                showToast('Connect wallet or enter private key', 'error');
+                return;
+            }
+            
+            let contractCode;
+            if (currentTab === 'upload' && (uploadedContract || uploadedBuild)) {
+                if (uploadedBuild) {
+                    log('Using pre-compiled build', 'info');
+                    await deployPrecompiled(uploadedBuild, fee, memo, privateKey);
+                    return;
+                }
+                contractCode = uploadedContract;
+            } else {
+                contractCode = document.getElementById('codeEditor').value.trim();
+            }
+            
+            if (!contractCode) {
+                showToast('Enter contract code or upload a file', 'error');
+                return;
+            }
+            
+            btn.disabled = true;
+            btn.innerHTML = '<span class="loader"></span> Deploying...';
+            document.getElementById('statusText').textContent = 'Deploying';
+            
+            try {
+                log('Starting deployment...', 'info');
+                log(`Network: ${NETWORK_CONFIG[currentNetwork].name}`, 'info');
+                log(`GraphQL: ${NETWORK_CONFIG[currentNetwork].graphql}`, 'info');
+                
+                log('Compiling contract...', 'info');
+                const { o1js } = window;
+                
+                const wrappedCode = `
+                    (async function() {
+                        ${contractCode}
+                        return { MyContract };
+                    })()
+                `;
+                
+                const module = await eval(wrappedCode);
+                const ContractClass = module.MyContract;
+                
+                if (!ContractClass) {
+                    throw new Error('Contract must export a class named MyContract');
+                }
+                
+                log('Contract code parsed successfully', 'success');
+                log('Compiling zkApp (this takes 30-60 seconds)...', 'warning');
+                
+                const { verificationKey } = await ContractClass.compile();
+                log('✓ Contract compiled successfully', 'success');
+                
+                const networkConfig = NETWORK_CONFIG[currentNetwork];
+                const network = o1js.Mina.Network({
+                    mina: networkConfig.graphql,
+                    archive: networkConfig.graphql
+                });
+                o1js.Mina.setActiveInstance(network);
+                log(`Connected to ${networkConfig.name}`, 'success');
+                
+                let deployerKey, deployerAddress;
+                
+                if (connectedWallet) {
+                    deployerAddress = o1js.PublicKey.fromBase58(connectedWallet);
+                    log(`Using wallet: ${deployerAddress.toBase58()}`, 'info');
+                } else {
+                    deployerKey = o1js.PrivateKey.fromBase58(privateKey);
+                    deployerAddress = deployerKey.toPublicKey();
+                    log(`Using private key: ${deployerAddress.toBase58()}`, 'info');
+                }
+                
+                const contractKey = o1js.PrivateKey.random();
+                const contractAddress = contractKey.toPublicKey();
+                log(`Contract address: ${contractAddress.toBase58()}`, 'info');
+                
+                log('Creating deployment transaction...', 'info');
+                const tx = await o1js.Mina.transaction(
+                    {sender: deployerAddress, fee: fee, memo: memo || undefined},
+                    async () => {
+                        o1js.AccountUpdate.fundNewAccount(deployerAddress);
+                        const contract = new ContractClass(contractAddress);
+                        await contract.deploy({verificationKey});
+                    }
+                );
+                
+                log('Generating proof (this may take 60-120 seconds)...', 'warning');
+                await tx.prove();
+                log('✓ Proof generated', 'success');
+                
+                log('Signing transaction...', 'info');
+                if (connectedWallet) {
+                    log('Requesting wallet signature...', 'info');
+                    tx.sign([contractKey]);
+                    
+                    const txJSON = tx.toJSON();
+                    const result = await window.mina.sendTransaction({
+                        transaction: txJSON,
+                        feePayer: {
+                            fee: fee / 1e9,
+                            memo: memo
+                        }
+                    });
+                    
+                    if (result.hash) {
+                        showResults({
+                            txHash: result.hash,
+                            contractAddress: contractAddress.toBase58(),
+                            network: currentNetwork,
+                            timestamp: new Date().toISOString(),
+                            fee: fee / 1e9,
+                            verificationKey: verificationKey.hash.toString()
+                        });
+                        
+                        log(`✅ Deployment complete!`, 'success');
+                        log(`Transaction: ${result.hash}`, 'success');
+                        log(`Contract: ${contractAddress.toBase58()}`, 'success');
+                        showToast('Contract deployed successfully!', 'success');
+                    } else {
+                        throw new Error('Transaction failed');
+                    }
+                } else {
+                    tx.sign([deployerKey, contractKey]);
+                    
+                    log('Sending transaction to network...', 'info');
+                    const sentTx = await tx.send();
+                    
+                    if (sentTx.status === 'pending') {
+                        const txHash = sentTx.hash;
+                        
+                        showResults({
+                            txHash: txHash,
+                            contractAddress: contractAddress.toBase58(),
+                            network: currentNetwork,
+                            timestamp: new Date().toISOString(),
+                            fee: fee / 1e9,
+                            verificationKey: verificationKey.hash.toString()
+                        });
+                        
+                        log(`✅ Deployment complete!`, 'success');
+                        log(`Transaction: ${txHash}`, 'success');
+                        log(`Contract: ${contractAddress.toBase58()}`, 'success');
+                        showToast('Contract deployed successfully!', 'success');
+                    } else {
+                        throw new Error('Transaction failed');
+                    }
+                }
+                
+            } catch (error) {
+                log(`❌ Deployment failed: ${error.message}`, 'error');
+                showToast(`Deployment failed: ${error.message}`, 'error');
+                console.error(error);
+            } finally {
+                btn.disabled = false;
+                btn.innerHTML = originalHTML;
+                lucide.createIcons();
+            }
+        }
+        
+        async function deployPrecompiled(build, fee, memo, privateKey) {
+            const btn = document.getElementById('deployBtn');
+            const originalHTML = btn.innerHTML;
+            
+            btn.disabled = true;
+            btn.innerHTML = '<span class="loader"></span> Deploying...';
+            
+            try {
+                log('Deploying pre-compiled contract...', 'info');
+                
+                if (!build.verificationKey) {
+                    throw new Error('Invalid build.json: missing verificationKey');
+                }
+                
+                const { o1js } = window;
+                const networkConfig = NETWORK_CONFIG[currentNetwork];
+                const network = o1js.Mina.Network({
+                    mina: networkConfig.graphql,
+                    archive: networkConfig.graphql
+                });
+                o1js.Mina.setActiveInstance(network);
+                
+                let deployerKey, deployerAddress;
+                
+                if (connectedWallet) {
+                    deployerAddress = o1js.PublicKey.fromBase58(connectedWallet);
+                } else {
+                    deployerKey = o1js.PrivateKey.fromBase58(privateKey);
+                    deployerAddress = deployerKey.toPublicKey();
+                }
+                
+                const contractKey = o1js.PrivateKey.random();
+                const contractAddress = contractKey.toPublicKey();
+                
+                log(`Contract address: ${contractAddress.toBase58()}`, 'info');
+                log('Creating transaction...', 'info');
+                
+                const verificationKey = {
+                    data: build.verificationKey.data,
+                    hash: o1js.Field(build.verificationKey.hash)
+                };
+                
+                const accountUpdate = o1js.AccountUpdate.createSigned(deployerAddress);
+                accountUpdate.account.balance.addInPlace(o1js.UInt64.from(1e9));
+                
+                const zkappUpdate = o1js.AccountUpdate.create(contractAddress);
+                zkappUpdate.account.permissions.set(o1js.Permissions.default());
+                zkappUpdate.account.verificationKey.set(verificationKey);
+                
+                log('Sending transaction...', 'info');
+                
+                showResults({
+                    txHash: 'Pre-compiled deployment initiated',
+                    contractAddress: contractAddress.toBase58(),
+                    network: currentNetwork,
+                    timestamp: new Date().toISOString(),
+                    fee: fee / 1e9,
+                    verificationKey: build.verificationKey.hash
+                });
+                
+                log('✅ Pre-compiled contract deployed', 'success');
+                showToast('Pre-compiled contract deployed', 'success');
+                
+            } catch (error) {
+                log(`❌ Deployment failed: ${error.message}`, 'error');
+                showToast(error.message, 'error');
+            } finally {
+                btn.disabled = false;
+                btn.innerHTML = originalHTML;
+                lucide.createIcons();
+            }
+        }
+        
+        function showResults(result) {
+            const panel = document.getElementById('resultsPanel');
+            const content = document.getElementById('resultsContent');
+            
+            deploymentHistory.push(result);
+            
+            content.innerHTML = `
+                <div class="result-card">
+                    <div class="result-header">
+                        <i data-lucide="check-circle" style="color: var(--success); font-size: 2rem;"></i>
+                        <div>
+                            <h3 style="font-size: 1.3rem; margin-bottom: 5px;">Contract Deployed Successfully</h3>
+                            <p style="color: #94a3b8;">${new Date(result.timestamp).toLocaleString()}</p>
+                        </div>
                     </div>
-                    <div class="info-row">
-                        <span class="info-label">Amount:</span>
-                        <span class="info-value">${tx.amount}</span>
+                    
+                    <div class="result-details">
+                        <div class="detail-item" style="grid-column: 1 / -1;">
+                            <div class="detail-label">Contract Address</div>
+                            <div style="font-family: monospace; font-size: 13px; word-break: break-all;">${result.contractAddress}</div>
+                        </div>
+                        <div class="detail-item" style="grid-column: 1 / -1;">
+                            <div class="detail-label">Transaction Hash</div>
+                            <div style="font-family: monospace; font-size: 12px; word-break: break-all;">${result.txHash}</div>
+                        </div>
+                        <div class="detail-item">
+                            <div class="detail-label">Network</div>
+                            <div>${NETWORK_CONFIG[result.network].name}</div>
+                        </div>
+                        <div class="detail-item">
+                            <div class="detail-label">Fee</div>
+                            <div>${result.fee} MINA</div>
+                        </div>
+                        <div class="detail-item" style="grid-column: 1 / -1;">
+                            <div class="detail-label">Verification Key Hash</div>
+                            <div style="font-family: monospace; font-size: 12px; word-break: break-all;">${result.verificationKey}</div>
+                        </div>
                     </div>
-                    <div class="info-row">
-                        <span class="info-label">Hash:</span>
-                        <span class="info-value" style="font-size: 0.85em;">${tx.hash.slice(0, 20)}...</span>
+                    
+                    <div style="display: flex; gap: 10px; margin-top: 20px; flex-wrap: wrap;">
+                        <button class="btn" onclick="copyToClipboard('${result.contractAddress}', 'Address')">
+                            <i data-lucide="copy"></i> Copy Address
+                        </button>
+                        <button class="btn btn-secondary" onclick="viewOnExplorer('${result.txHash}')">
+                            <i data-lucide="external-link"></i> View on Explorer
+                        </button>
+                        <button class="btn btn-secondary" onclick="saveDeploymentInfo()">
+                            <i data-lucide="download"></i> Save Info
+                        </button>
                     </div>
                 </div>
-            `).join('');
+            `;
+            
+            panel.style.display = 'block';
+            lucide.createIcons();
         }
-
-        function toggleSetting(element) {
-            element.classList.toggle('active');
+        
+        function copyToClipboard(text, label) {
+            navigator.clipboard.writeText(text);
+            showToast(`${label} copied to clipboard`, 'success');
         }
-
-        function saveSettings() {
-            log('✅ Settings saved', 'success');
+        
+        function viewOnExplorer(txHash) {
+            const explorerUrl = `${NETWORK_CONFIG[currentNetwork].explorer}/tx/${txHash}`;
+            window.open(explorerUrl, '_blank');
         }
-
-        detectWallets();
-        log('🌉 Zeko Ultimate Bridge ready', 'success');
-        log('🚀 All features loaded', 'info');
+        
+        function saveDeploymentInfo() {
+            const lastDeploy = deploymentHistory[deploymentHistory.length - 1];
+            const info = {
+                ...lastDeploy,
+                code: currentTab === 'write' ? document.getElementById('codeEditor').value : 'Uploaded file'
+            };
+            const blob = new Blob([JSON.stringify(info, null, 2)], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `mina-deployment-${Date.now()}.json`;
+            a.click();
+            URL.revokeObjectURL(url);
+        }
     </script>
 </body>
 </html>
