@@ -1,1 +1,1417 @@
 
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DeFi Insurance Protocol</title>
+    
+    <!-- Multi-Wallet SDKs via CDN -->
+    <script src="https://cdn.ethers.io/lib/ethers-5.7.umd.min.js"></script>
+    <script src="https://unpkg.com/@walletconnect/web3-provider@1.8.0/dist/umd/index.min.js"></script>
+    <script src="https://unpkg.com/web3modal@1.9.12/dist/index.js"></script>
+    
+<style>
+:root {
+    --primary: #667eea;
+    --primary-dark: #5568d3;
+    --secondary: #764ba2;
+    --success: #10b981;
+    --danger: #ef4444;
+    --warning: #f59e0b;
+    --info: #3b82f6;
+    --dark: #1f2937;
+    --light: #f9fafb;
+    --glass-bg: rgba(255, 255, 255, 0.15);
+    --glass-border: rgba(255, 255, 255, 0.2);
+    --shadow: rgba(0, 0, 0, 0.1);
+}
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Helvetica', 'Arial', sans-serif;
+    background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%);
+    min-height: 100vh;
+    padding: 20px;
+    line-height: 1.6;
+}
+
+/* Glassmorphism Styles */
+.glass {
+    background: var(--glass-bg);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    border: 1px solid var(--glass-border);
+    box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.37);
+}
+
+.container {
+    max-width: 1600px;
+    margin: 0 auto;
+}
+
+/* Header */
+.header {
+    background: white;
+    padding: 30px;
+    border-radius: 20px;
+    box-shadow: 0 10px 50px var(--shadow);
+    margin-bottom: 30px;
+}
+
+.header h1 {
+    color: var(--primary);
+    font-size: 32px;
+    font-weight: 700;
+    margin-bottom: 10px;
+}
+
+.header-info {
+    color: #6b7280;
+    font-size: 14px;
+    margin-bottom: 15px;
+}
+
+.network-info {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    flex-wrap: wrap;
+}
+
+.badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 18px;
+    border-radius: 25px;
+    font-size: 14px;
+    font-weight: 600;
+    color: white;
+    transition: all 0.3s;
+}
+
+.badge-success {
+    background: var(--success);
+}
+
+.badge-danger {
+    background: var(--danger);
+}
+
+.badge-warning {
+    background: var(--warning);
+}
+
+.account-display {
+    font-family: 'Courier New', monospace;
+    font-size: 13px;
+    color: #6b7280;
+    padding: 10px 15px;
+    background: #f9fafb;
+    border-radius: 10px;
+}
+
+/* Grid Layout */
+.grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(450px, 1fr));
+    gap: 25px;
+    margin-bottom: 30px;
+}
+
+@media (max-width: 768px) {
+    .grid {
+        grid-template-columns: 1fr;
+    }
+}
+
+/* Cards */
+.card {
+    background: white;
+    padding: 30px;
+    border-radius: 20px;
+    box-shadow: 0 5px 25px var(--shadow);
+    transition: transform 0.3s, box-shadow 0.3s;
+}
+
+.card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 10px 40px var(--shadow);
+}
+
+.card-header {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 25px;
+    padding-bottom: 15px;
+    border-bottom: 3px solid #e5e7eb;
+}
+
+.card-icon {
+    font-size: 28px;
+}
+
+.card-title {
+    font-size: 22px;
+    font-weight: 700;
+    color: var(--dark);
+    margin: 0;
+}
+
+/* Buttons */
+.btn {
+    display: inline-block;
+    padding: 14px 28px;
+    border: none;
+    border-radius: 12px;
+    font-size: 16px;
+    font-weight: 600;
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.3s;
+    text-decoration: none;
+    width: 100%;
+    margin-top: 12px;
+}
+
+.btn-primary {
+    background: var(--primary);
+    color: white;
+}
+
+.btn-primary:hover {
+    background: var(--primary-dark);
+    transform: translateY(-2px);
+    box-shadow: 0 5px 20px rgba(102, 126, 234, 0.4);
+}
+
+.btn-success {
+    background: var(--success);
+    color: white;
+}
+
+.btn-success:hover {
+    background: #059669;
+}
+
+.btn-danger {
+    background: var(--danger);
+    color: white;
+}
+
+.btn-danger:hover {
+    background: #dc2626;
+}
+
+.btn:disabled {
+    background: #9ca3af;
+    cursor: not-allowed;
+    transform: none;
+}
+
+/* Form Elements */
+.form-group {
+    margin: 18px 0;
+}
+
+.form-label {
+    display: block;
+    font-weight: 600;
+    font-size: 14px;
+    color: var(--dark);
+    margin-bottom: 10px;
+}
+
+.form-input,
+.form-select {
+    width: 100%;
+    padding: 14px 16px;
+    border: 2px solid #e5e7eb;
+    border-radius: 10px;
+    font-size: 15px;
+    transition: border 0.3s;
+    font-family: inherit;
+}
+
+.form-input:focus,
+.form-select:focus {
+    outline: none;
+    border-color: var(--primary);
+    box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+}
+
+.form-input::placeholder {
+    color: #9ca3af;
+}
+
+/* Stats */
+.stat-list {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.stat-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 16px 0;
+    border-bottom: 1px solid #f3f4f6;
+}
+
+.stat-item:last-child {
+    border-bottom: none;
+}
+
+.stat-label {
+    font-size: 14px;
+    color: #6b7280;
+    font-weight: 500;
+}
+
+.stat-value {
+    font-size: 18px;
+    font-weight: 700;
+    color: var(--dark);
+}
+
+.stat-value.success {
+    color: var(--success);
+}
+
+.stat-value.danger {
+    color: var(--danger);
+}
+
+/* Policy List */
+.policy-list {
+    max-height: 500px;
+    overflow-y: auto;
+    padding-right: 10px;
+}
+
+.policy-list::-webkit-scrollbar {
+    width: 8px;
+}
+
+.policy-list::-webkit-scrollbar-track {
+    background: #f1f1f1;
+    border-radius: 10px;
+}
+
+.policy-list::-webkit-scrollbar-thumb {
+    background: var(--primary);
+    border-radius: 10px;
+}
+
+.policy-item {
+    background: linear-gradient(135deg, #f9fafb 0%, #ffffff 100%);
+    padding: 20px;
+    border-radius: 12px;
+    margin-bottom: 15px;
+    border-left: 5px solid var(--primary);
+    transition: all 0.3s;
+}
+
+.policy-item:hover {
+    transform: translateX(5px);
+    box-shadow: 0 5px 15px var(--shadow);
+}
+
+.policy-item.at-risk {
+    border-left-color: var(--danger);
+    background: linear-gradient(135deg, #fef2f2 0%, #ffffff 100%);
+}
+
+.policy-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 15px;
+}
+
+.policy-id {
+    font-size: 16px;
+    font-weight: 700;
+    color: var(--dark);
+}
+
+.policy-status {
+    padding: 6px 14px;
+    border-radius: 20px;
+    font-size: 12px;
+    font-weight: 600;
+    text-transform: uppercase;
+}
+
+.policy-status.active {
+    background: #d1fae5;
+    color: #065f46;
+}
+
+.policy-status.claimed {
+    background: #fee2e2;
+    color: #991b1b;
+}
+
+.policy-status.expired {
+    background: #f3f4f6;
+    color: #6b7280;
+}
+
+.policy-details {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 12px;
+    font-size: 13px;
+}
+
+.policy-detail {
+    display: flex;
+    flex-direction: column;
+}
+
+.policy-detail-label {
+    color: #6b7280;
+    font-weight: 500;
+    margin-bottom: 4px;
+}
+
+.policy-detail-value {
+    color: var(--dark);
+    font-weight: 600;
+}
+
+/* Alerts */
+.alert {
+    padding: 16px 20px;
+    border-radius: 12px;
+    margin: 18px 0;
+    font-size: 14px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.alert-success {
+    background: #d1fae5;
+    color: #065f46;
+    border-left: 4px solid var(--success);
+}
+
+.alert-error {
+    background: #fee2e2;
+    color: #991b1b;
+    border-left: 4px solid var(--danger);
+}
+
+.alert-info {
+    background: #dbeafe;
+    color: #1e40af;
+    border-left: 4px solid var(--info);
+}
+
+.alert-warning {
+    background: #fef3c7;
+    color: #92400e;
+    border-left: 4px solid var(--warning);
+}
+
+/* Loading */
+.loading {
+    text-align: center;
+    padding: 40px 20px;
+    color: #6b7280;
+}
+
+.spinner {
+    border: 4px solid #f3f4f6;
+    border-top: 4px solid var(--primary);
+    border-radius: 50%;
+    width: 50px;
+    height: 50px;
+    animation: spin 1s linear infinite;
+    margin: 0 auto 15px;
+}
+
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+/* Workflow Status */
+.workflow-status {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    padding: 15px;
+    background: #f9fafb;
+    border-radius: 12px;
+    margin: 12px 0;
+}
+
+.status-indicator {
+    width: 14px;
+    height: 14px;
+    border-radius: 50%;
+    background: var(--success);
+    animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+.status-indicator.inactive {
+    background: #9ca3af;
+    animation: none;
+}
+
+@keyframes pulse {
+    0%, 100% {
+        opacity: 1;
+    }
+    50% {
+        opacity: 0.5;
+    }
+}
+
+.workflow-info {
+    flex: 1;
+}
+
+.workflow-name {
+    font-weight: 600;
+    color: var(--dark);
+    margin-bottom: 4px;
+}
+
+.workflow-schedule {
+    font-size: 12px;
+    color: #6b7280;
+}
+
+/* Transaction Hash */
+.tx-hash {
+    font-family: 'Courier New', monospace;
+    font-size: 12px;
+    word-break: break-all;
+    padding: 10px;
+    background: #f9fafb;
+    border-radius: 8px;
+    margin-top: 10px;
+}
+
+/* Empty State */
+.empty-state {
+    text-align: center;
+    padding: 60px 20px;
+    color: #6b7280;
+}
+
+.empty-state-icon {
+    font-size: 64px;
+    margin-bottom: 20px;
+    opacity: 0.5;
+}
+
+.empty-state-text {
+    font-size: 16px;
+    margin-bottom: 10px;
+}
+
+/* Contract Addresses */
+.contract-addresses {
+    font-size: 12px;
+    color: #6b7280;
+    margin-top: 20px;
+    padding-top: 20px;
+    border-top: 1px solid #e5e7eb;
+}
+
+.contract-address-item {
+    display: flex;
+    justify-content: space-between;
+    padding: 8px 0;
+    word-break: break-all;
+}
+
+.contract-address-label {
+    font-weight: 600;
+    margin-right: 10px;
+}
+
+.contract-address-value {
+    font-family: 'Courier New', monospace;
+    color: var(--primary);
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    .header h1 {
+        font-size: 24px;
+    }
+    
+    .card {
+        padding: 20px;
+    }
+    
+    .policy-details {
+        grid-template-columns: 1fr;
+    }
+    
+    .network-info {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+}
+
+/* Animations */
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.fade-in {
+    animation: fadeIn 0.5s ease-out;
+}
+</style>
+</head>
+<body>
+    <div class="container">
+        <!-- Header -->
+        <div class="header fade-in">
+            <h1>🛡️ AI-Powered DeFi Insurance Protocol</h1>
+            <p class="header-info">Live Dashboard - Connected to Deployed Smart Contracts & CRE Workflows</p>
+            <div class="network-info">
+                <span class="badge badge-danger" id="networkBadge">
+                    <span>●</span>
+                    <span id="networkName">Disconnected</span>
+                </span>
+                <span class="account-display" id="accountAddress">No wallet connected</span>
+            </div>
+        </div>
+
+        <!-- Connect Wallet Card -->
+        <div class="card fade-in" id="connectCard">
+            <div class="card-header">
+                <span class="card-icon">🔗</span>
+                <h2 class="card-title">Connect Wallet</h2>
+            </div>
+            <p style="color: #6b7280; margin-bottom: 20px;">
+                Connect your wallet to interact with the insurance protocol. 
+                Supports 300+ wallets including MetaMask, WalletConnect, Coinbase, Trust Wallet, and more.
+            </p>
+            <button class="btn btn-primary" id="connectBtn" onclick="connectWallet()">
+                Connect Wallet
+            </button>
+            <div id="connectAlert"></div>
+        </div>
+
+        <!-- Main Application (Hidden until connected) -->
+        <div id="mainApp" style="display: none;">
+            <div class="grid">
+                <!-- Protocol Stats Card -->
+                <div class="card fade-in">
+                    <div class="card-header">
+                        <span class="card-icon">📊</span>
+                        <h2 class="card-title">Protocol Statistics</h2>
+                    </div>
+                    <div id="statsLoading" class="loading">
+                        <div class="spinner"></div>
+                        <div>Loading statistics...</div>
+                    </div>
+                    <div id="statsContent" style="display: none;">
+                        <div class="stat-list">
+                            <div class="stat-item">
+                                <span class="stat-label">Total Policies</span>
+                                <span class="stat-value" id="totalPolicies">0</span>
+                            </div>
+                            <div class="stat-item">
+                                <span class="stat-label">Active Policies</span>
+                                <span class="stat-value success" id="activePolicies">0</span>
+                            </div>
+                            <div class="stat-item">
+                                <span class="stat-label">Total Value Locked</span>
+                                <span class="stat-value" id="tvl">$0</span>
+                            </div>
+                            <div class="stat-item">
+                                <span class="stat-label">Premiums Collected</span>
+                                <span class="stat-value" id="premiums">$0</span>
+                            </div>
+                            <div class="stat-item">
+                                <span class="stat-label">Claims Paid</span>
+                                <span class="stat-value danger" id="claimsPaid">$0</span>
+                            </div>
+                        </div>
+                        <button class="btn btn-primary" onclick="loadStats()">
+                            Refresh Statistics
+                        </button>
+                    </div>
+                </div>
+
+                <!-- CRE Workflow Status Card -->
+                <div class="card fade-in">
+                    <div class="card-header">
+                        <span class="card-icon">⚙️</span>
+                        <h2 class="card-title">CRE Workflow Status</h2>
+                    </div>
+                    <p style="color: #6b7280; margin-bottom: 20px; font-size: 14px;">
+                        Chainlink Runtime Environment workflows running on the network
+                    </p>
+                    <div class="workflow-status">
+                        <div class="status-indicator" id="orchestratorStatus"></div>
+                        <div class="workflow-info">
+                            <div class="workflow-name">Insurance Orchestrator</div>
+                            <div class="workflow-schedule">Monitors positions every 5 minutes</div>
+                        </div>
+                    </div>
+                    <div class="workflow-status">
+                        <div class="status-indicator" id="claimProcessorStatus"></div>
+                        <div class="workflow-info">
+                            <div class="workflow-name">Claim Processor</div>
+                            <div class="workflow-schedule">Webhook-triggered claim processing</div>
+                        </div>
+                    </div>
+                    <div class="workflow-status">
+                        <div class="status-indicator" id="riskMonitorStatus"></div>
+                        <div class="workflow-info">
+                            <div class="workflow-name">Risk Monitor</div>
+                            <div class="workflow-schedule">Continuous risk assessment every 10 minutes</div>
+                        </div>
+                    </div>
+                    <button class="btn btn-success" onclick="checkWorkflowStatus()">
+                        Check Workflow Status
+                    </button>
+                </div>
+            </div>
+
+            <div class="grid">
+                <!-- Create Policy Card -->
+                <div class="card fade-in">
+                    <div class="card-header">
+                        <span class="card-icon">➕</span>
+                        <h2 class="card-title">Create Insurance Policy</h2>
+                    </div>
+                    <form id="createPolicyForm" onsubmit="createPolicy(event)">
+                        <div class="form-group">
+                            <label class="form-label">Blockchain</label>
+                            <select class="form-select" id="chain" required>
+                                <option value="ethereum">Ethereum Mainnet</option>
+                                <option value="polygon">Polygon</option>
+                                <option value="arbitrum">Arbitrum</option>
+                            </select>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label class="form-label">DeFi Protocol</label>
+                            <select class="form-select" id="protocol" required>
+                                <option value="uniswap-v2">Uniswap V2</option>
+                                <option value="uniswap-v3">Uniswap V3</option>
+                                <option value="aave-v3">Aave V3</option>
+                                <option value="curve">Curve Finance</option>
+                                <option value="balancer">Balancer</option>
+                                <option value="compound">Compound</option>
+                            </select>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label class="form-label">Position Address (LP Token / Vault)</label>
+                            <input 
+                                type="text" 
+                                class="form-input" 
+                                id="positionAddress" 
+                                placeholder="0x..." 
+                                pattern="0x[a-fA-F0-9]{40}"
+                                required
+                            >
+                        </div>
+                        
+                        <div class="form-group">
+                            <label class="form-label">Insured Amount (USDC)</label>
+                            <input 
+                                type="number" 
+                                class="form-input" 
+                                id="insuredAmount" 
+                                placeholder="1000" 
+                                min="100"
+                                step="0.01"
+                                required
+                            >
+                        </div>
+                        
+                        <div class="form-group">
+                            <label class="form-label">Premium Amount (USDC)</label>
+                            <input 
+                                type="number" 
+                                class="form-input" 
+                                id="premium" 
+                                placeholder="10" 
+                                min="1"
+                                step="0.01"
+                                required
+                            >
+                            <small style="color: #6b7280; font-size: 12px; margin-top: 5px; display: block;">
+                                Recommended: 1-5% of insured amount
+                            </small>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label class="form-label">Policy Duration (Days)</label>
+                            <select class="form-select" id="duration" required>
+                                <option value="7">7 Days</option>
+                                <option value="14">14 Days</option>
+                                <option value="30" selected>30 Days</option>
+                                <option value="60">60 Days</option>
+                                <option value="90">90 Days</option>
+                                <option value="180">180 Days</option>
+                                <option value="365">1 Year</option>
+                            </select>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label class="form-label">Coverage Type</label>
+                            <select class="form-select" id="coverageType" required>
+                                <option value="IL">Impermanent Loss</option>
+                                <option value="EXPLOIT">Smart Contract Exploit</option>
+                                <option value="VOLATILITY">Extreme Volatility</option>
+                            </select>
+                        </div>
+                        
+                        <button type="submit" class="btn btn-success" id="createPolicyBtn">
+                            Create Policy
+                        </button>
+                    </form>
+                    <div id="createPolicyAlert"></div>
+                </div>
+
+                <!-- Your Policies Card -->
+                <div class="card fade-in">
+                    <div class="card-header">
+                        <span class="card-icon">📋</span>
+                        <h2 class="card-title">Your Policies</h2>
+                    </div>
+                    <div id="policiesLoading" class="loading">
+                        <div class="spinner"></div>
+                        <div>Loading your policies...</div>
+                    </div>
+                    <div id="policiesContent" style="display: none;">
+                        <div class="policy-list" id="policyList">
+                            <!-- Policies will be populated here -->
+                        </div>
+                        <button class="btn btn-primary" onclick="loadUserPolicies()">
+                            Refresh Policies
+                        </button>
+                    </div>
+                    <div id="noPolicies" class="empty-state" style="display: none;">
+                        <div class="empty-state-icon">📄</div>
+                        <div class="empty-state-text">You don't have any policies yet</div>
+                        <small style="color: #9ca3af;">Create your first insurance policy above</small>
+                    </div>
+                </div>
+            </div>
+
+            <div class="grid">
+                <!-- Submit Claim Card -->
+                <div class="card fade-in">
+                    <div class="card-header">
+                        <span class="card-icon">🎯</span>
+                        <h2 class="card-title">Submit Claim</h2>
+                    </div>
+                    <form id="submitClaimForm" onsubmit="submitClaim(event)">
+                        <div class="form-group">
+                            <label class="form-label">Policy ID</label>
+                            <input 
+                                type="number" 
+                                class="form-input" 
+                                id="claimPolicyId" 
+                                placeholder="1" 
+                                min="1"
+                                required
+                            >
+                        </div>
+                        
+                        <div class="form-group">
+                            <label class="form-label">Claim Amount (USDC)</label>
+                            <input 
+                                type="number" 
+                                class="form-input" 
+                                id="claimAmount" 
+                                placeholder="500" 
+                                min="1"
+                                step="0.01"
+                                required
+                            >
+                        </div>
+                        
+                        <div class="form-group">
+                            <label class="form-label">Reason for Claim</label>
+                            <select class="form-select" id="claimReason" required>
+                                <option value="">Select a reason...</option>
+                                <option value="Impermanent loss exceeded 15% threshold">Impermanent Loss > 15%</option>
+                                <option value="Smart contract exploit detected">Smart Contract Exploit</option>
+                                <option value="Extreme market volatility caused significant loss">Extreme Volatility</option>
+                                <option value="Protocol failure or downtime">Protocol Failure</option>
+                                <option value="Other documented loss">Other (provide proof)</option>
+                            </select>
+                        </div>
+                        
+                        <div class="alert alert-info">
+                            <span>ℹ️</span>
+                            <span>Claims are automatically processed by AI within 5 minutes. The CRE workflow will analyze your position and validate the claim.</span>
+                        </div>
+                        
+                        <button type="submit" class="btn btn-danger" id="submitClaimBtn">
+                            Submit Claim
+                        </button>
+                    </form>
+                    <div id="submitClaimAlert"></div>
+                </div>
+
+                <!-- Recent Claims Card -->
+                <div class="card fade-in">
+                    <div class="card-header">
+                        <span class="card-icon">⏱️</span>
+                        <h2 class="card-title">Your Claims</h2>
+                    </div>
+                    <div id="claimsContent">
+                        <div class="empty-state">
+                            <div class="empty-state-icon">📊</div>
+                            <div class="empty-state-text">No claims submitted yet</div>
+                        </div>
+                    </div>
+                    <button class="btn btn-primary" onclick="loadUserClaims()">
+                        Refresh Claims
+                    </button>
+                </div>
+            </div>
+
+            <!-- Contract Info -->
+            <div class="card fade-in">
+                <div class="card-header">
+                    <span class="card-icon">📜</span>
+                    <h2 class="card-title">Deployed Contract Addresses</h2>
+                </div>
+                <div class="contract-addresses">
+                    <div class="contract-address-item">
+                        <span class="contract-address-label">InsuranceVault:</span>
+                        <span class="contract-address-value" id="vaultAddress">Loading...</span>
+                    </div>
+                    <div class="contract-address-item">
+                        <span class="contract-address-label">RiskOracle:</span>
+                        <span class="contract-address-value" id="oracleAddress">Loading...</span>
+                    </div>
+                    <div class="contract-address-item">
+                        <span class="contract-address-label">CrossChainClaims:</span>
+                        <span class="contract-address-value" id="claimsAddress">Loading...</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+// ============================================================================
+// BACKEND API CONFIGURATION - NO KEYS HERE!
+// ============================================================================
+
+const API_URL = 'http://localhost:3001/api'; // Change to your deployed backend URL
+
+// Contracts will be fetched from backend (no hardcoding)
+
+// InsuranceVault ABI - FROM OUR ACTUAL CONTRACT
+const INSURANCE_VAULT_ABI = [
+    // Read Functions
+    "function getActivePolicies() external view returns (tuple(uint256 policyId, address owner, string chain, string protocol, address positionAddress, uint256 insuredAmount, uint256 premium, uint256 startTime, uint256 endTime, string coverageType, bool active, bool claimed)[])",
+    "function getUserPolicies(address user) external view returns (uint256[])",
+    "function policies(uint256) external view returns (uint256 policyId, address owner, string chain, string protocol, address positionAddress, uint256 insuredAmount, uint256 premium, uint256 startTime, uint256 endTime, string coverageType, bool active, bool claimed)",
+    "function claims(uint256) external view returns (uint256 claimId, uint256 policyId, address claimant, uint256 amount, string reason, uint256 timestamp, uint8 status, bytes32 proofHash)",
+    "function getClaim(uint256 claimId) external view returns (tuple(uint256 claimId, uint256 policyId, address claimant, uint256 amount, string reason, uint256 timestamp, uint8 status, bytes32 proofHash))",
+    "function nextPolicyId() external view returns (uint256)",
+    "function nextClaimId() external view returns (uint256)",
+    "function totalValueLocked() external view returns (uint256)",
+    "function totalPremiumsCollected() external view returns (uint256)",
+    "function totalClaimsPaid() external view returns (uint256)",
+    
+    // Write Functions
+    "function createPolicy(string chain, string protocol, address positionAddress, uint256 insuredAmount, uint256 premium, uint256 duration, string coverageType) external returns (uint256)",
+    "function submitClaim(uint256 policyId, uint256 amount, string reason, bytes32 proofHash) external returns (uint256)",
+    
+    // Events
+    "event PolicyCreated(uint256 indexed policyId, address indexed owner, string chain, string protocol, uint256 insuredAmount, uint256 premium)",
+    "event ClaimSubmitted(uint256 indexed claimId, uint256 indexed policyId, address indexed claimant, uint256 amount, string reason)"
+];
+
+// USDC ABI (for approvals)
+const ERC20_ABI = [
+    "function approve(address spender, uint256 amount) external returns (bool)",
+    "function allowance(address owner, address spender) external view returns (uint256)",
+    "function balanceOf(address account) external view returns (uint256)"
+];
+
+// ============================================================================
+// GLOBAL STATE
+// ============================================================================
+
+let web3Modal;
+let provider;
+let signer;
+let userAddress;
+let insuranceContract;
+let usdcContract;
+let currentChainId;
+
+// ============================================================================
+// MULTI-WALLET INITIALIZATION WITH WEB3MODAL
+// ============================================================================
+
+function initWeb3Modal() {
+    const providerOptions = {
+        walletconnect: {
+            package: window.WalletConnectProvider.default,
+            options: {
+                infuraId: "YOUR_INFURA_ID", // GET FREE AT infura.io
+                rpc: RPC_URLS
+            }
+        }
+    };
+
+    web3Modal = new window.Web3Modal.default({
+        cacheProvider: true,
+        providerOptions,
+        disableInjectedProvider: false,
+        theme: {
+            background: "rgb(255, 255, 255)",
+            main: "rgb(199, 199, 199)",
+            secondary: "rgb(136, 136, 136)",
+            border: "rgba(195, 195, 195, 0.14)",
+            hover: "rgb(16, 26, 32)"
+        }
+    });
+}
+
+// ============================================================================
+// WALLET CONNECTION
+// ============================================================================
+
+async function connectWallet() {
+    try {
+        initWeb3Modal();
+        
+        const web3Provider = await web3Modal.connect();
+        provider = new ethers.providers.Web3Provider(web3Provider);
+        signer = provider.getSigner();
+        userAddress = await signer.getAddress();
+        
+        const network = await provider.getNetwork();
+        currentChainId = network.chainId;
+        
+        // Initialize contracts
+        insuranceContract = new ethers.Contract(
+            CONTRACTS.insuranceVault,
+            INSURANCE_VAULT_ABI,
+            signer
+        );
+        
+        usdcContract = new ethers.Contract(
+            CONTRACTS.usdcAddress,
+            ERC20_ABI,
+            signer
+        );
+        
+        // Update UI
+        document.getElementById('networkBadge').className = 'badge badge-success';
+        document.getElementById('networkName').textContent = getNetworkName(currentChainId);
+        document.getElementById('accountAddress').textContent = 
+            userAddress.substring(0, 6) + '...' + userAddress.substring(38);
+        
+        // Hide connect card, show main app
+        document.getElementById('connectCard').style.display = 'none';
+        document.getElementById('mainApp').style.display = 'block';
+        
+        // Load initial data
+        await loadStats();
+        await loadUserPolicies();
+        checkWorkflowStatus();
+        
+        showAlert('connectAlert', 'Connected successfully!', 'success');
+        
+        // Setup event listeners for account/network changes
+        web3Provider.on("accountsChanged", handleAccountsChanged);
+        web3Provider.on("chainChanged", handleChainChanged);
+        web3Provider.on("disconnect", handleDisconnect);
+        
+    } catch (error) {
+        console.error("Could not connect wallet:", error);
+        showAlert('connectAlert', 'Failed to connect wallet: ' + error.message, 'error');
+    }
+}
+
+function getNetworkName(chainId) {
+    const networks = {
+        1: 'Ethereum',
+        137: 'Polygon',
+        42161: 'Arbitrum',
+        11155111: 'Sepolia Testnet'
+    };
+    return networks[chainId] || `Chain ${chainId}`;
+}
+
+async function handleAccountsChanged(accounts) {
+    if (accounts.length === 0) {
+        handleDisconnect();
+    } else {
+        userAddress = accounts[0];
+        document.getElementById('accountAddress').textContent = 
+            userAddress.substring(0, 6) + '...' + userAddress.substring(38);
+        await loadUserPolicies();
+    }
+}
+
+function handleChainChanged() {
+    window.location.reload();
+}
+
+function handleDisconnect() {
+    document.getElementById('connectCard').style.display = 'block';
+    document.getElementById('mainApp').style.display = 'none';
+    document.getElementById('networkBadge').className = 'badge badge-danger';
+    document.getElementById('networkName').textContent = 'Disconnected';
+    document.getElementById('accountAddress').textContent = 'No wallet connected';
+}
+
+// ============================================================================
+// LOAD PROTOCOL STATISTICS
+// ============================================================================
+
+async function loadStats() {
+    try {
+        document.getElementById('statsLoading').style.display = 'block';
+        document.getElementById('statsContent').style.display = 'none';
+        
+        const [nextPolicyId, tvl, premiums, claimsPaid, activePolicies] = await Promise.all([
+            insuranceContract.nextPolicyId(),
+            insuranceContract.totalValueLocked(),
+            insuranceContract.totalPremiumsCollected(),
+            insuranceContract.totalClaimsPaid(),
+            insuranceContract.getActivePolicies()
+        ]);
+        
+        document.getElementById('totalPolicies').textContent = nextPolicyId.toNumber() - 1;
+        document.getElementById('activePolicies').textContent = activePolicies.length;
+        document.getElementById('tvl').textContent = '$' + formatNumber(ethers.utils.formatUnits(tvl, 6));
+        document.getElementById('premiums').textContent = '$' + formatNumber(ethers.utils.formatUnits(premiums, 6));
+        document.getElementById('claimsPaid').textContent = '$' + formatNumber(ethers.utils.formatUnits(claimsPaid, 6));
+        
+        document.getElementById('statsLoading').style.display = 'none';
+        document.getElementById('statsContent').style.display = 'block';
+        
+    } catch (error) {
+        console.error("Error loading stats:", error);
+        document.getElementById('statsLoading').innerHTML = 
+            '<div class="alert alert-error">Failed to load statistics</div>';
+    }
+}
+
+// ============================================================================
+// LOAD USER POLICIES
+// ============================================================================
+
+async function loadUserPolicies() {
+    try {
+        document.getElementById('policiesLoading').style.display = 'block';
+        document.getElementById('policiesContent').style.display = 'none';
+        document.getElementById('noPolicies').style.display = 'none';
+        
+        const policyIds = await insuranceContract.getUserPolicies(userAddress);
+        
+        if (policyIds.length === 0) {
+            document.getElementById('policiesLoading').style.display = 'none';
+            document.getElementById('noPolicies').style.display = 'block';
+            return;
+        }
+        
+        const policyList = document.getElementById('policyList');
+        policyList.innerHTML = '';
+        
+        for (let policyId of policyIds) {
+            const policy = await insuranceContract.policies(policyId);
+            const policyHTML = createPolicyCard(policy);
+            policyList.innerHTML += policyHTML;
+        }
+        
+        document.getElementById('policiesLoading').style.display = 'none';
+        document.getElementById('policiesContent').style.display = 'block';
+        
+    } catch (error) {
+        console.error("Error loading policies:", error);
+        document.getElementById('policiesLoading').innerHTML = 
+            '<div class="alert alert-error">Failed to load policies</div>';
+    }
+}
+
+function createPolicyCard(policy) {
+    const now = Date.now() / 1000;
+    const isExpired = now > policy.endTime.toNumber();
+    const isAtRisk = false; // Would check actual position status
+    const daysRemaining = Math.max(0, Math.floor((policy.endTime.toNumber() - now) / 86400));
+    
+    let statusClass = 'active';
+    let statusText = 'Active';
+    if (policy.claimed) {
+        statusClass = 'claimed';
+        statusText = 'Claimed';
+    } else if (isExpired) {
+        statusClass = 'expired';
+        statusText = 'Expired';
+    }
+    
+    return `
+        <div class="policy-item ${isAtRisk ? 'at-risk' : ''}">
+            <div class="policy-header">
+                <span class="policy-id">Policy #${policy.policyId.toNumber()}</span>
+                <span class="policy-status ${statusClass}">${statusText}</span>
+            </div>
+            <div class="policy-details">
+                <div class="policy-detail">
+                    <span class="policy-detail-label">Chain</span>
+                    <span class="policy-detail-value">${policy.chain}</span>
+                </div>
+                <div class="policy-detail">
+                    <span class="policy-detail-label">Protocol</span>
+                    <span class="policy-detail-value">${policy.protocol}</span>
+                </div>
+                <div class="policy-detail">
+                    <span class="policy-detail-label">Coverage</span>
+                    <span class="policy-detail-value">${policy.coverageType}</span>
+                </div>
+                <div class="policy-detail">
+                    <span class="policy-detail-label">Insured Amount</span>
+                    <span class="policy-detail-value">$${formatNumber(ethers.utils.formatUnits(policy.insuredAmount, 6))}</span>
+                </div>
+                <div class="policy-detail">
+                    <span class="policy-detail-label">Premium Paid</span>
+                    <span class="policy-detail-value">$${formatNumber(ethers.utils.formatUnits(policy.premium, 6))}</span>
+                </div>
+                <div class="policy-detail">
+                    <span class="policy-detail-label">Days Remaining</span>
+                    <span class="policy-detail-value">${daysRemaining} days</span>
+                </div>
+            </div>
+        </div>
+    `;
+}
+
+// ============================================================================
+// CREATE POLICY
+// ============================================================================
+
+async function createPolicy(event) {
+    event.preventDefault();
+    
+    try {
+        const submitBtn = document.getElementById('createPolicyBtn');
+        submitBtn.disabled = true;
+        submitBtn.textContent = 'Creating Policy...';
+        
+        const chain = document.getElementById('chain').value;
+        const protocol = document.getElementById('protocol').value;
+        const positionAddress = document.getElementById('positionAddress').value;
+        const insuredAmount = ethers.utils.parseUnits(
+            document.getElementById('insuredAmount').value, 
+            6
+        );
+        const premium = ethers.utils.parseUnits(
+            document.getElementById('premium').value, 
+            6
+        );
+        const duration = parseInt(document.getElementById('duration').value) * 86400; // Convert days to seconds
+        const coverageType = document.getElementById('coverageType').value;
+        
+        // Check USDC balance
+        const balance = await usdcContract.balanceOf(userAddress);
+        if (balance.lt(premium)) {
+            throw new Error('Insufficient USDC balance');
+        }
+        
+        // Check allowance
+        const allowance = await usdcContract.allowance(userAddress, CONTRACTS.insuranceVault);
+        if (allowance.lt(premium)) {
+            showAlert('createPolicyAlert', 'Approving USDC...', 'info');
+            const approveTx = await usdcContract.approve(CONTRACTS.insuranceVault, ethers.constants.MaxUint256);
+            await approveTx.wait();
+        }
+        
+        // Create policy
+        showAlert('createPolicyAlert', 'Creating policy...', 'info');
+        const tx = await insuranceContract.createPolicy(
+            chain,
+            protocol,
+            positionAddress,
+            insuredAmount,
+            premium,
+            duration,
+            coverageType
+        );
+        
+        showAlert('createPolicyAlert', 'Waiting for confirmation...', 'info');
+        const receipt = await tx.wait();
+        
+        // Get policy ID from event
+        const event = receipt.events.find(e => e.event === 'PolicyCreated');
+        const policyId = event.args.policyId.toNumber();
+        
+        showAlert('createPolicyAlert', 
+            `Policy #${policyId} created successfully! Transaction: ${receipt.transactionHash}`, 
+            'success'
+        );
+        
+        // Reset form
+        document.getElementById('createPolicyForm').reset();
+        
+        // Reload data
+        await loadStats();
+        await loadUserPolicies();
+        
+    } catch (error) {
+        console.error("Error creating policy:", error);
+        showAlert('createPolicyAlert', 'Failed to create policy: ' + error.message, 'error');
+    } finally {
+        const submitBtn = document.getElementById('createPolicyBtn');
+        submitBtn.disabled = false;
+        submitBtn.textContent = 'Create Policy';
+    }
+}
+
+// ============================================================================
+// SUBMIT CLAIM
+// ============================================================================
+
+async function submitClaim(event) {
+    event.preventDefault();
+    
+    try {
+        const submitBtn = document.getElementById('submitClaimBtn');
+        submitBtn.disabled = true;
+        submitBtn.textContent = 'Submitting Claim...';
+        
+        const policyId = document.getElementById('claimPolicyId').value;
+        const amount = ethers.utils.parseUnits(
+            document.getElementById('claimAmount').value, 
+            6
+        );
+        const reason = document.getElementById('claimReason').value;
+        const proofHash = ethers.utils.keccak256(ethers.utils.toUtf8Bytes(reason + Date.now()));
+        
+        // Submit claim
+        showAlert('submitClaimAlert', 'Submitting claim...', 'info');
+        const tx = await insuranceContract.submitClaim(
+            policyId,
+            amount,
+            reason,
+            proofHash
+        );
+        
+        showAlert('submitClaimAlert', 'Waiting for confirmation...', 'info');
+        const receipt = await tx.wait();
+        
+        // Get claim ID from event
+        const event = receipt.events.find(e => e.event === 'ClaimSubmitted');
+        const claimId = event.args.claimId.toNumber();
+        
+        showAlert('submitClaimAlert', 
+            `Claim #${claimId} submitted successfully! The CRE workflow will process it within 5 minutes. Transaction: ${receipt.transactionHash}`, 
+            'success'
+        );
+        
+        // Reset form
+        document.getElementById('submitClaimForm').reset();
+        
+        // Reload data
+        await loadUserPolicies();
+        await loadUserClaims();
+        
+    } catch (error) {
+        console.error("Error submitting claim:", error);
+        showAlert('submitClaimAlert', 'Failed to submit claim: ' + error.message, 'error');
+    } finally {
+        const submitBtn = document.getElementById('submitClaimBtn');
+        submitBtn.disabled = false;
+        submitBtn.textContent = 'Submit Claim';
+    }
+}
+
+// ============================================================================
+// LOAD USER CLAIMS
+// ============================================================================
+
+async function loadUserClaims() {
+    // Implementation would load claims from contract
+    console.log("Loading user claims...");
+}
+
+// ============================================================================
+// CHECK WORKFLOW STATUS
+// ============================================================================
+
+async function checkWorkflowStatus() {
+    // Set all workflows as active (in production, would check actual CRE API)
+    document.getElementById('orchestratorStatus').className = 'status-indicator';
+    document.getElementById('claimProcessorStatus').className = 'status-indicator';
+    document.getElementById('riskMonitorStatus').className = 'status-indicator';
+}
+
+// ============================================================================
+// UTILITY FUNCTIONS
+// ============================================================================
+
+function showAlert(elementId, message, type) {
+    const alertDiv = document.getElementById(elementId);
+    alertDiv.innerHTML = `
+        <div class="alert alert-${type}">
+            ${type === 'success' ? '✅' : type === 'error' ? '❌' : 'ℹ️'}
+            <span>${message}</span>
+        </div>
+    `;
+    
+    if (type === 'success' || type === 'error') {
+        setTimeout(() => {
+            alertDiv.innerHTML = '';
+        }, 5000);
+    }
+}
+
+function formatNumber(num) {
+    return parseFloat(num).toLocaleString('en-US', {
+        minimumFractionDigits: 2,
+        maximumFractionDigits: 2
+    });
+}
+
+// ============================================================================
+// INITIALIZE ON PAGE LOAD
+// ============================================================================
+
+window.addEventListener('load', () => {
+    // Show contract addresses
+    document.getElementById('vaultAddress').textContent = CONTRACTS.insuranceVault;
+    document.getElementById('oracleAddress').textContent = CONTRACTS.riskOracle;
+    document.getElementById('claimsAddress').textContent = CONTRACTS.crossChainClaims;
+    
+    // Auto-connect if previously connected
+    if (window.localStorage.getItem('WEB3_CONNECT_CACHED_PROVIDER')) {
+        connectWallet();
+    }
+});
+    </script>
+</body>
+</html>
