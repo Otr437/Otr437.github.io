@@ -1,1 +1,1545 @@
-l
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>RWA Protocol — Starknet</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Syne:wght@400;600;700;800&display=swap" rel="stylesheet"/>
+<style>
+  /* ============================================================
+     Design direction: Industrial Terminal / Data-first
+     Think Bloomberg terminal meets brutalist web design.
+     Monospaced data, sharp grids, amber-on-black palette,
+     with tactical use of green for positive and red for negative.
+  ============================================================ */
+
+  :root {
+    --bg:        #0a0a0a;
+    --surface:   #111111;
+    --surface2:  #191919;
+    --border:    #2a2a2a;
+    --amber:     #f5a623;
+    --amber-dim: #7a5210;
+    --green:     #00d48a;
+    --red:       #ff4545;
+    --blue:      #4fa3ff;
+    --muted:     #555;
+    --text:      #e8e0d0;
+    --text-dim:  #7a7065;
+    --mono:      'Space Mono', monospace;
+    --sans:      'Syne', sans-serif;
+    --ticker-h:  36px;
+  }
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  html { background: var(--bg); color: var(--text); font-family: var(--sans); }
+
+  body {
+    min-height: 100vh;
+    background: var(--bg);
+    background-image:
+      linear-gradient(rgba(245,166,35,0.02) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(245,166,35,0.02) 1px, transparent 1px);
+    background-size: 40px 40px;
+  }
+
+  /* ---- Ticker Bar ---- */
+  .ticker-wrap {
+    position: fixed; top: 0; left: 0; right: 0; z-index: 100;
+    height: var(--ticker-h);
+    background: #0d0d0d;
+    border-bottom: 1px solid var(--amber-dim);
+    overflow: hidden;
+    display: flex; align-items: center;
+  }
+  .ticker-label {
+    flex-shrink: 0;
+    background: var(--amber);
+    color: #000;
+    font-family: var(--mono);
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 0.1em;
+    padding: 0 12px;
+    height: 100%;
+    display: flex; align-items: center;
+    text-transform: uppercase;
+  }
+  .ticker-track {
+    display: flex;
+    animation: tickerScroll 30s linear infinite;
+    white-space: nowrap;
+    gap: 0;
+  }
+  .ticker-item {
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--text-dim);
+    padding: 0 24px;
+    border-right: 1px solid var(--border);
+    height: var(--ticker-h);
+    display: flex; align-items: center; gap: 8px;
+  }
+  .ticker-item .val { color: var(--amber); font-weight: 700; }
+  .ticker-item .chg { font-size: 10px; }
+  .chg.up   { color: var(--green); }
+  .chg.down { color: var(--red); }
+  @keyframes tickerScroll {
+    0%   { transform: translateX(0); }
+    100% { transform: translateX(-50%); }
+  }
+
+  /* ---- Layout ---- */
+  .shell {
+    margin-top: var(--ticker-h);
+    max-width: 1440px;
+    margin-left: auto;
+    margin-right: auto;
+    padding: 0 24px 80px;
+  }
+
+  /* ---- Header ---- */
+  .hdr {
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-between;
+    padding: 32px 0 24px;
+    border-bottom: 2px solid var(--border);
+    margin-bottom: 32px;
+  }
+  .hdr-title {
+    font-family: var(--sans);
+    font-size: 36px;
+    font-weight: 800;
+    letter-spacing: -1px;
+    line-height: 1;
+  }
+  .hdr-title span { color: var(--amber); }
+  .hdr-sub {
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--muted);
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    margin-top: 6px;
+  }
+  .hdr-status {
+    display: flex; flex-direction: column; align-items: flex-end; gap: 6px;
+  }
+  .status-pill {
+    display: flex; align-items: center; gap: 6px;
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--text-dim);
+    background: var(--surface);
+    border: 1px solid var(--border);
+    padding: 4px 10px;
+    border-radius: 2px;
+  }
+  .status-dot {
+    width: 6px; height: 6px; border-radius: 50%;
+    background: var(--green);
+    box-shadow: 0 0 6px var(--green);
+    animation: pulse 2s ease-in-out infinite;
+  }
+  .status-dot.stale { background: var(--amber); box-shadow: 0 0 6px var(--amber); }
+  @keyframes pulse {
+    0%, 100% { opacity: 1; } 50% { opacity: 0.4; }
+  }
+
+  /* ---- Section Headers ---- */
+  .section-hdr {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 16px;
+  }
+  .section-hdr h2 {
+    font-size: 11px;
+    font-family: var(--mono);
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
+    color: var(--muted);
+  }
+  .section-hdr::after {
+    content: '';
+    flex: 1;
+    height: 1px;
+    background: var(--border);
+  }
+
+  /* ---- Oracle Data Grid ---- */
+  .oracle-grid {
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    gap: 1px;
+    background: var(--border);
+    border: 1px solid var(--border);
+    margin-bottom: 40px;
+  }
+  .oracle-card {
+    background: var(--surface);
+    padding: 20px 16px 16px;
+    position: relative;
+    transition: background 0.15s;
+  }
+  .oracle-card:hover { background: var(--surface2); }
+  .oracle-card::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 2px;
+    background: var(--amber-dim);
+  }
+  .oracle-card.flash::before { background: var(--amber); }
+  .oc-label {
+    font-family: var(--mono);
+    font-size: 9px;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: var(--text-dim);
+    margin-bottom: 8px;
+  }
+  .oc-value {
+    font-family: var(--mono);
+    font-size: 26px;
+    font-weight: 700;
+    color: var(--amber);
+    line-height: 1;
+    letter-spacing: -1px;
+  }
+  .oc-unit {
+    font-size: 12px;
+    color: var(--text-dim);
+    font-weight: 400;
+  }
+  .oc-sub {
+    font-family: var(--mono);
+    font-size: 10px;
+    color: var(--text-dim);
+    margin-top: 8px;
+  }
+  .oc-sub .badge {
+    display: inline-block;
+    padding: 2px 6px;
+    font-size: 9px;
+    font-weight: 700;
+    border-radius: 2px;
+    letter-spacing: 0.05em;
+  }
+  .badge.fresh { background: rgba(0,212,138,0.15); color: var(--green); }
+  .badge.stale { background: rgba(245,166,35,0.15); color: var(--amber); }
+
+  /* ---- Main Grid ---- */
+  .main-grid {
+    display: grid;
+    grid-template-columns: 1fr 380px;
+    gap: 24px;
+    margin-bottom: 40px;
+  }
+
+  /* ---- RWA Table ---- */
+  .panel {
+    background: var(--surface);
+    border: 1px solid var(--border);
+  }
+  .panel-hdr {
+    padding: 14px 20px;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+  .panel-hdr h3 {
+    font-family: var(--mono);
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: var(--muted);
+  }
+  .panel-count {
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--amber);
+    background: rgba(245,166,35,0.1);
+    padding: 2px 8px;
+  }
+
+  .rwa-table { width: 100%; border-collapse: collapse; }
+  .rwa-table th {
+    font-family: var(--mono);
+    font-size: 9px;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: var(--muted);
+    text-align: left;
+    padding: 10px 16px;
+    border-bottom: 1px solid var(--border);
+    background: var(--bg);
+  }
+  .rwa-table td {
+    font-family: var(--mono);
+    font-size: 12px;
+    padding: 12px 16px;
+    border-bottom: 1px solid var(--border);
+    vertical-align: middle;
+  }
+  .rwa-table tr:hover td { background: var(--surface2); cursor: pointer; }
+  .rwa-table tr.selected td { background: rgba(245,166,35,0.05); }
+
+  .type-badge {
+    display: inline-block;
+    padding: 2px 7px;
+    font-size: 9px;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    border-radius: 1px;
+  }
+  .type-tbill    { background: rgba(79,163,255,0.15); color: var(--blue); }
+  .type-re       { background: rgba(0,212,138,0.12); color: var(--green); }
+  .type-commodity{ background: rgba(245,166,35,0.15); color: var(--amber); }
+  .type-corp     { background: rgba(255,255,255,0.08); color: #aaa; }
+  .type-tips     { background: rgba(255,69,69,0.12); color: var(--red); }
+
+  .indexed-icon { color: var(--green); font-size: 10px; }
+  td.nav-val { color: var(--amber); font-weight: 700; }
+  td.yield-val { color: var(--green); }
+  td.addr { color: var(--text-dim); font-size: 10px; }
+
+  .action-btn {
+    background: none;
+    border: 1px solid var(--border);
+    color: var(--text-dim);
+    font-family: var(--mono);
+    font-size: 10px;
+    padding: 4px 10px;
+    cursor: pointer;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    transition: all 0.15s;
+  }
+  .action-btn:hover {
+    border-color: var(--amber);
+    color: var(--amber);
+    background: rgba(245,166,35,0.05);
+  }
+
+  /* ---- Create / Action Panel ---- */
+  .side-panel { display: flex; flex-direction: column; gap: 16px; }
+
+  .form-panel {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    padding: 20px;
+  }
+  .form-panel h3 {
+    font-family: var(--mono);
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
+    color: var(--muted);
+    margin-bottom: 18px;
+    padding-bottom: 10px;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .field { margin-bottom: 14px; }
+  .field label {
+    display: block;
+    font-family: var(--mono);
+    font-size: 9px;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: var(--text-dim);
+    margin-bottom: 6px;
+  }
+  .field input,
+  .field select {
+    width: 100%;
+    background: var(--bg);
+    border: 1px solid var(--border);
+    color: var(--text);
+    font-family: var(--mono);
+    font-size: 12px;
+    padding: 8px 10px;
+    outline: none;
+    transition: border-color 0.15s;
+    -webkit-appearance: none;
+    border-radius: 0;
+  }
+  .field input:focus,
+  .field select:focus { border-color: var(--amber); }
+  .field select option { background: #111; }
+
+  .inline-fields { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+
+  .checkbox-field {
+    display: flex; align-items: center; gap: 8px;
+    margin-bottom: 14px;
+    cursor: pointer;
+  }
+  .checkbox-field input[type=checkbox] {
+    width: 14px; height: 14px;
+    accent-color: var(--amber);
+  }
+  .checkbox-field span {
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--text-dim);
+  }
+
+  .btn-primary {
+    width: 100%;
+    background: var(--amber);
+    border: none;
+    color: #000;
+    font-family: var(--mono);
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    padding: 12px;
+    cursor: pointer;
+    transition: background 0.15s;
+    margin-top: 4px;
+  }
+  .btn-primary:hover { background: #f0c060; }
+  .btn-primary:active { background: #d4901e; }
+  .btn-primary:disabled {
+    background: var(--border);
+    color: var(--muted);
+    cursor: not-allowed;
+  }
+
+  .btn-secondary {
+    flex: 1;
+    background: none;
+    border: 1px solid var(--amber-dim);
+    color: var(--amber);
+    font-family: var(--mono);
+    font-size: 10px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    padding: 10px;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+  .btn-secondary:hover { background: rgba(245,166,35,0.08); }
+
+  /* ---- Position Panel ---- */
+  .position-row {
+    display: flex; justify-content: space-between; align-items: center;
+    padding: 10px 0;
+    border-bottom: 1px solid var(--border);
+    font-family: var(--mono);
+    font-size: 11px;
+  }
+  .position-row:last-child { border-bottom: none; }
+  .position-key { color: var(--text-dim); font-size: 10px; text-transform: uppercase; letter-spacing: 0.08em; }
+  .position-val { color: var(--text); }
+  .position-val.green { color: var(--green); }
+  .position-val.amber { color: var(--amber); }
+  .position-val.red   { color: var(--red); }
+
+  .pnl-bar {
+    height: 4px;
+    background: var(--border);
+    margin: 8px 0 16px;
+    position: relative;
+    overflow: visible;
+  }
+  .pnl-fill {
+    height: 100%;
+    background: var(--green);
+    transition: width 0.6s ease;
+    position: relative;
+  }
+  .pnl-fill.negative { background: var(--red); }
+
+  /* ---- Oracle Round History ---- */
+  .history-panel {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    margin-bottom: 40px;
+  }
+  .history-row {
+    display: grid;
+    grid-template-columns: 60px 90px 100px 100px 100px 100px 1fr;
+    gap: 0;
+    border-bottom: 1px solid var(--border);
+    align-items: center;
+  }
+  .history-row.hdr-row {
+    background: var(--bg);
+    font-family: var(--mono);
+    font-size: 9px;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: var(--muted);
+  }
+  .history-row.hdr-row div,
+  .history-row div {
+    padding: 10px 14px;
+    font-family: var(--mono);
+    font-size: 11px;
+  }
+  .history-row.new-row { animation: flashRow 1s ease; }
+  @keyframes flashRow {
+    0%   { background: rgba(245,166,35,0.12); }
+    100% { background: transparent; }
+  }
+
+  /* ---- Tx Log ---- */
+  .tx-log {
+    background: var(--bg);
+    border: 1px solid var(--border);
+    font-family: var(--mono);
+    font-size: 11px;
+    height: 160px;
+    overflow-y: auto;
+    padding: 8px;
+  }
+  .tx-line {
+    padding: 3px 6px;
+    color: var(--text-dim);
+    border-bottom: 1px solid rgba(255,255,255,0.03);
+  }
+  .tx-line .ts { color: var(--muted); font-size: 9px; margin-right: 8px; }
+  .tx-line .tag { font-size: 9px; padding: 1px 5px; margin-right: 6px; border-radius: 1px; }
+  .tag-ok  { background: rgba(0,212,138,0.15); color: var(--green); }
+  .tag-err { background: rgba(255,69,69,0.15);  color: var(--red); }
+  .tag-inf { background: rgba(79,163,255,0.15); color: var(--blue); }
+
+  /* ---- Chart ---- */
+  .chart-wrap { background: var(--surface); border: 1px solid var(--border); padding: 16px; margin-bottom: 24px; }
+  .chart-title { font-family: var(--mono); font-size: 9px; text-transform: uppercase; letter-spacing: 0.1em; color: var(--muted); margin-bottom: 12px; }
+  .sparkline { display: flex; align-items: flex-end; gap: 3px; height: 60px; }
+  .spark-bar {
+    flex: 1;
+    background: var(--amber-dim);
+    min-height: 4px;
+    transition: height 0.4s ease;
+    position: relative;
+  }
+  .spark-bar:hover { background: var(--amber); }
+  .spark-bar::after {
+    content: attr(data-val);
+    position: absolute;
+    bottom: 100%; left: 50%; transform: translateX(-50%);
+    font-family: var(--mono); font-size: 8px;
+    color: var(--amber);
+    white-space: nowrap;
+    opacity: 0; pointer-events: none;
+    transition: opacity 0.15s;
+    padding-bottom: 2px;
+  }
+  .spark-bar:hover::after { opacity: 1; }
+
+  /* ---- Notification toast ---- */
+  .toast {
+    position: fixed; bottom: 24px; right: 24px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-left: 3px solid var(--amber);
+    padding: 12px 20px;
+    font-family: var(--mono);
+    font-size: 12px;
+    color: var(--text);
+    max-width: 360px;
+    z-index: 999;
+    opacity: 0;
+    transform: translateY(10px);
+    transition: all 0.2s ease;
+    pointer-events: none;
+  }
+  .toast.show { opacity: 1; transform: translateY(0); }
+  .toast.green-toast { border-left-color: var(--green); }
+  .toast.red-toast   { border-left-color: var(--red); }
+
+  /* ---- Responsive ---- */
+  @media (max-width: 1100px) {
+    .oracle-grid { grid-template-columns: repeat(3, 1fr); }
+    .main-grid { grid-template-columns: 1fr; }
+  }
+  @media (max-width: 700px) {
+    .oracle-grid { grid-template-columns: repeat(2, 1fr); }
+    .history-row { grid-template-columns: 50px 80px 90px 90px 90px; }
+    .history-row div:nth-child(6),
+    .history-row div:nth-child(7) { display: none; }
+  }
+</style>
+</head>
+<body>
+
+<!-- ===== LIVE TICKER ===== -->
+<div class="ticker-wrap">
+  <div class="ticker-label">LIVE</div>
+  <div id="ticker" style="overflow:hidden;flex:1">
+    <div class="ticker-track" id="tickerTrack">
+      <!-- duplicated for seamless loop -->
+      <div class="ticker-item">CPI&nbsp;<span class="val" id="t-cpi">—</span> <span class="chg up" id="t-cpi-chg">—</span></div>
+      <div class="ticker-item">FED&nbsp;FUNDS&nbsp;<span class="val" id="t-ff">—</span></div>
+      <div class="ticker-item">3M&nbsp;T-BILL&nbsp;<span class="val" id="t-3m">—</span></div>
+      <div class="ticker-item">10Y&nbsp;TREASURY&nbsp;<span class="val" id="t-10y">—</span></div>
+      <div class="ticker-item">ORACLE&nbsp;ROUND&nbsp;<span class="val" id="t-round">—</span></div>
+      <div class="ticker-item">RWA&nbsp;ASSETS&nbsp;<span class="val" id="t-count">—</span></div>
+      <div class="ticker-item">DATA&nbsp;FRESHNESS&nbsp;<span class="val" id="t-fresh">—</span></div>
+      <!-- duplicate for scroll -->
+      <div class="ticker-item">CPI&nbsp;<span class="val" id="t-cpi2">—</span></div>
+      <div class="ticker-item">FED&nbsp;FUNDS&nbsp;<span class="val" id="t-ff2">—</span></div>
+      <div class="ticker-item">3M&nbsp;T-BILL&nbsp;<span class="val" id="t-3m2">—</span></div>
+      <div class="ticker-item">10Y&nbsp;TREASURY&nbsp;<span class="val" id="t-10y2">—</span></div>
+      <div class="ticker-item">ORACLE&nbsp;ROUND&nbsp;<span class="val">—</span></div>
+      <div class="ticker-item">RWA&nbsp;ASSETS&nbsp;<span class="val">—</span></div>
+      <div class="ticker-item">DATA&nbsp;FRESHNESS&nbsp;<span class="val">—</span></div>
+    </div>
+  </div>
+</div>
+
+<div class="shell">
+
+  <!-- ===== HEADER ===== -->
+  <div class="hdr">
+    <div>
+      <div class="hdr-title">RWA <span>Protocol</span></div>
+      <div class="hdr-sub">Starknet · Tokenized Real World Assets · Inflation Oracle</div>
+    </div>
+    <div class="hdr-status">
+      <div class="status-pill">
+        <div class="status-dot" id="oracleStatusDot"></div>
+        <span id="oracleStatusText">ORACLE CONNECTED</span>
+      </div>
+      <div class="status-pill" id="walletPill" style="cursor:pointer" onclick="connectWallet()">
+        <span id="walletText">CONNECT WALLET</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== ORACLE GRID ===== -->
+  <div class="section-hdr"><h2>Macro Oracle · Round <span id="roundBadge">—</span></h2></div>
+  <div class="oracle-grid">
+    <div class="oracle-card" id="card-cpi">
+      <div class="oc-label">CPI-U Index <span style="font-size:8px">(CUUR0000SA0)</span></div>
+      <div class="oc-value" id="cpiVal">—</div>
+      <div class="oc-sub" id="cpiSub">YoY: —  · Source: BLS</div>
+    </div>
+    <div class="oracle-card" id="card-ff">
+      <div class="oc-label">Fed Funds Rate</div>
+      <div class="oc-value" id="ffVal">—<span class="oc-unit">%</span></div>
+      <div class="oc-sub" id="ffSub">Series: FEDFUNDS · FRED</div>
+    </div>
+    <div class="oracle-card" id="card-3m">
+      <div class="oc-label">3-Month T-Bill</div>
+      <div class="oc-value" id="tbill3mVal">—<span class="oc-unit">%</span></div>
+      <div class="oc-sub" id="tbill3mSub">Series: TB3MS · FRED</div>
+    </div>
+    <div class="oracle-card" id="card-10y">
+      <div class="oc-label">10-Year Treasury</div>
+      <div class="oc-value" id="tbill10yVal">—<span class="oc-unit">%</span></div>
+      <div class="oc-sub" id="tbill10ySub">Series: DGS10 · FRED</div>
+    </div>
+    <div class="oracle-card" id="card-fresh">
+      <div class="oc-label">Oracle Status</div>
+      <div class="oc-value" style="font-size:20px" id="freshnessVal">—</div>
+      <div class="oc-sub" id="freshnessSub">Last update: —</div>
+    </div>
+  </div>
+
+  <!-- ===== CPI SPARKLINE ===== -->
+  <div class="chart-wrap">
+    <div class="chart-title">CPI Index — Round History</div>
+    <div class="sparkline" id="sparkline"></div>
+  </div>
+
+  <!-- ===== MAIN CONTENT ===== -->
+  <div class="main-grid">
+
+    <!-- LEFT: RWA Asset Table -->
+    <div>
+      <div class="panel">
+        <div class="panel-hdr">
+          <h3>Registered RWA Assets</h3>
+          <span class="panel-count" id="assetCount">0 assets</span>
+        </div>
+        <table class="rwa-table">
+          <thead>
+            <tr>
+              <th>#</th>
+              <th>Symbol</th>
+              <th>Type</th>
+              <th>ISIN</th>
+              <th>Yield</th>
+              <th>NAV/Token</th>
+              <th>Inflation</th>
+              <th>Maturity</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody id="rwaTableBody">
+            <tr>
+              <td colspan="9" style="color:var(--muted);text-align:center;padding:32px;font-family:var(--mono);font-size:11px">
+                No assets registered. Deploy a contract and create assets to begin.
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- RIGHT: Side Panels -->
+    <div class="side-panel">
+
+      <!-- Create New RWA -->
+      <div class="form-panel">
+        <h3>Create RWA Asset</h3>
+        <div class="inline-fields">
+          <div class="field">
+            <label>Name</label>
+            <input type="text" id="f-name" placeholder="US Treasury Note" />
+          </div>
+          <div class="field">
+            <label>Symbol</label>
+            <input type="text" id="f-symbol" placeholder="USTN-2Y" />
+          </div>
+        </div>
+        <div class="inline-fields">
+          <div class="field">
+            <label>ISIN</label>
+            <input type="text" id="f-isin" placeholder="US912828YE91" />
+          </div>
+          <div class="field">
+            <label>Asset Type</label>
+            <select id="f-type">
+              <option value="0">Treasury Bill</option>
+              <option value="1">Real Estate</option>
+              <option value="2">Commodity</option>
+              <option value="3">Corporate Bond</option>
+              <option value="4">Inflation Bond (TIPS)</option>
+            </select>
+          </div>
+        </div>
+        <div class="inline-fields">
+          <div class="field">
+            <label>Par Value (USD)</label>
+            <input type="number" id="f-par" placeholder="100" value="100" />
+          </div>
+          <div class="field">
+            <label>Yield (bps)</label>
+            <input type="number" id="f-yield" placeholder="425" value="425" />
+          </div>
+        </div>
+        <div class="field">
+          <label>Maturity Date (blank = perpetual)</label>
+          <input type="date" id="f-maturity" />
+        </div>
+        <div class="checkbox-field">
+          <input type="checkbox" id="f-indexed" />
+          <span>Inflation-Indexed (NAV tracks CPI)</span>
+        </div>
+        <button class="btn-primary" onclick="createRWA()" id="createBtn">
+          DEPLOY RWA TOKEN + VAULT
+        </button>
+      </div>
+
+      <!-- Position / Interact -->
+      <div class="form-panel" id="positionPanel" style="display:none">
+        <h3 id="positionTitle">POSITION</h3>
+        <div id="positionRows"></div>
+        <div style="height:10px"></div>
+        <div class="inline-fields">
+          <div class="field">
+            <label>Amount (USDC)</label>
+            <input type="number" id="f-amount" placeholder="1000" />
+          </div>
+        </div>
+        <div style="display:flex;gap:8px;margin-top:4px">
+          <button class="btn-secondary" onclick="depositToVault()">DEPOSIT</button>
+          <button class="btn-secondary" onclick="redeemFromVault()">REDEEM</button>
+          <button class="btn-secondary" onclick="claimYield()" style="color:var(--green);border-color:rgba(0,212,138,0.3)">CLAIM YIELD</button>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- ===== ORACLE HISTORY ===== -->
+  <div class="section-hdr" style="margin-top:8px"><h2>Oracle Publish History</h2></div>
+  <div class="history-panel">
+    <div class="history-row hdr-row">
+      <div>ROUND</div>
+      <div>DATE</div>
+      <div>CPI INDEX</div>
+      <div>YOY</div>
+      <div>3M T-BILL</div>
+      <div>10Y TREAS.</div>
+      <div>TX HASH</div>
+    </div>
+    <div id="historyBody"></div>
+  </div>
+
+  <!-- ===== TX LOG ===== -->
+  <div class="section-hdr"><h2>Transaction Log</h2></div>
+  <div class="tx-log" id="txLog">
+    <div class="tx-line"><span class="ts">—</span><span class="tag tag-inf">INFO</span>Connect your wallet and configure oracle contract address to begin</div>
+  </div>
+
+</div>
+
+<!-- ===== TOAST ===== -->
+<div class="toast" id="toast"></div>
+
+<script>
+// ============================================================
+//  Starknet RWA Dashboard — Client JS
+//
+//  Integrates with:
+//    - starknet.js (via CDN / injected by Argent/Braavos wallet)
+//    - InflationOracle.cairo contract  (reads oracle data)
+//    - RWAFactory.cairo contract       (creates + lists assets)
+//    - RWAVault.cairo contract         (deposit / redeem)
+//
+//  Config: set CONTRACT_ADDRESSES below after deployment
+// ============================================================
+
+// ---- Contract Addresses (update after deployment) ----
+const CONTRACTS = {
+  oracle:  localStorage.getItem('oracleAddr')  || '0x0',
+  factory: localStorage.getItem('factoryAddr') || '0x0',
+};
+
+// ---- Mock state for UI demo (replaced by real calls when wallet connected) ----
+const STATE = {
+  connected: false,
+  address: null,
+  provider: null,
+  account: null,
+  oracleData: {
+    cpi: 31412,         // 314.12 — real Dec 2025 BLS data
+    cpi_yoy_bps: 270,   // 2.70%
+    tbill_3m_bps: 529,  // 5.29%
+    tbill_10y_bps: 456, // 4.56%
+    fed_funds_bps: 533, // 5.33%
+    round_id: 0,
+    is_fresh: true,
+    last_update: new Date().toISOString(),
+  },
+  assets: [],
+  selectedAsset: null,
+  history: [],
+  cpiHistory: [30500, 30712, 30889, 31001, 31102, 31190, 31270, 31350, 31412],
+};
+
+// ============================================================
+//  Wallet Connection
+// ============================================================
+async function connectWallet() {
+  try {
+    if (typeof window.starknet === 'undefined') {
+      showToast('No Starknet wallet found. Install Argent X or Braavos.', 'red');
+      log('No Starknet wallet detected', 'err');
+      return;
+    }
+
+    await window.starknet.enable();
+    const [address] = window.starknet.selectedAddress
+      ? [window.starknet.selectedAddress]
+      : await window.starknet.request({ type: 'wallet_requestAccounts' });
+
+    STATE.connected = true;
+    STATE.address = address;
+    STATE.provider = window.starknet.provider;
+    STATE.account = window.starknet.account;
+
+    const short = address.slice(0, 8) + '...' + address.slice(-6);
+    document.getElementById('walletText').textContent = short;
+    document.getElementById('walletPill').style.borderColor = 'var(--green)';
+    document.getElementById('walletPill').style.color = 'var(--green)';
+
+    log(`Wallet connected: ${address}`, 'info');
+    showToast('Wallet connected', 'green');
+
+    // Load oracle config
+    promptOracleConfig();
+    await refreshOracleData();
+    await loadAssets();
+
+  } catch (e) {
+    log('Wallet connection failed: ' + e.message, 'err');
+    showToast('Connection failed: ' + e.message, 'red');
+  }
+}
+
+function promptOracleConfig() {
+  const oracle = prompt('Enter InflationOracle contract address (0x...):', CONTRACTS.oracle);
+  if (oracle && oracle.startsWith('0x')) {
+    CONTRACTS.oracle = oracle;
+    localStorage.setItem('oracleAddr', oracle);
+  }
+  const factory = prompt('Enter RWAFactory contract address (0x...):', CONTRACTS.factory);
+  if (factory && factory.startsWith('0x')) {
+    CONTRACTS.factory = factory;
+    localStorage.setItem('factoryAddr', factory);
+  }
+}
+
+// ============================================================
+//  Oracle Data Refresh
+//  Calls InflationOracle.cairo view functions
+// ============================================================
+async function refreshOracleData() {
+  try {
+    if (!STATE.connected || CONTRACTS.oracle === '0x0') {
+      // Use demo data
+      renderOracle(STATE.oracleData);
+      renderSparkline(STATE.cpiHistory);
+      return;
+    }
+
+    // Real Starknet calls via starknet.js
+    const provider = STATE.provider;
+
+    // Read oracle contract
+    const getCPI = await provider.callContract({
+      contractAddress: CONTRACTS.oracle,
+      entrypoint: 'get_cpi',
+      calldata: [],
+    });
+
+    const get3m = await provider.callContract({
+      contractAddress: CONTRACTS.oracle,
+      entrypoint: 'get_tbill_3m_rate_bps',
+      calldata: [],
+    });
+
+    const get10y = await provider.callContract({
+      contractAddress: CONTRACTS.oracle,
+      entrypoint: 'get_tbill_10y_rate_bps',
+      calldata: [],
+    });
+
+    const getFF = await provider.callContract({
+      contractAddress: CONTRACTS.oracle,
+      entrypoint: 'get_fed_funds_rate_bps',
+      calldata: [],
+    });
+
+    const getYoY = await provider.callContract({
+      contractAddress: CONTRACTS.oracle,
+      entrypoint: 'get_cpi_yoy_bps',
+      calldata: [],
+    });
+
+    const getIsFresh = await provider.callContract({
+      contractAddress: CONTRACTS.oracle,
+      entrypoint: 'is_data_fresh',
+      calldata: [],
+    });
+
+    const getRound = await provider.callContract({
+      contractAddress: CONTRACTS.oracle,
+      entrypoint: 'get_latest_round_id',
+      calldata: [],
+    });
+
+    // Parse MacroDataPoint struct: [value, timestamp, publisher, round_id]
+    const cpiPoint = getCPI.result || getCPI;
+    const cpiVal = parseInt(cpiPoint[0], 16);
+    const cpiTs  = parseInt(cpiPoint[1], 16);
+    const roundId = parseInt(getRound.result?.[0] || getRound[0], 16);
+
+    const tbill3m   = parseInt((get3m.result  || get3m)[0],  16);
+    const tbill10y  = parseInt((get10y.result || get10y)[0], 16);
+    const fedFunds  = parseInt((getFF.result  || getFF)[0],  16);
+    const yoyBps    = parseInt((getYoY.result || getYoY)[0], 16);
+    const isFresh   = parseInt((getIsFresh.result || getIsFresh)[0], 16) !== 0;
+
+    STATE.oracleData = {
+      cpi: cpiVal,
+      cpi_yoy_bps: yoyBps,
+      tbill_3m_bps: tbill3m,
+      tbill_10y_bps: tbill10y,
+      fed_funds_bps: fedFunds,
+      round_id: roundId,
+      is_fresh: isFresh,
+      last_update: new Date(cpiTs * 1000).toISOString(),
+    };
+
+    STATE.cpiHistory.push(cpiVal);
+    if (STATE.cpiHistory.length > 12) STATE.cpiHistory.shift();
+
+    renderOracle(STATE.oracleData);
+    renderSparkline(STATE.cpiHistory);
+    renderHistory();
+    log(`Oracle refreshed — Round ${roundId}, CPI: ${(cpiVal / 100).toFixed(2)}`, 'info');
+
+  } catch (e) {
+    log('Oracle read failed: ' + e.message, 'err');
+    // Fallback to demo data
+    renderOracle(STATE.oracleData);
+    renderSparkline(STATE.cpiHistory);
+  }
+}
+
+// ============================================================
+//  Render Oracle Cards
+// ============================================================
+function renderOracle(d) {
+  const cpi = d.cpi / 100;
+  const yoy = d.cpi_yoy_bps / 100;
+  const ff  = d.fed_funds_bps / 100;
+  const t3m = d.tbill_3m_bps / 100;
+  const t10y= d.tbill_10y_bps / 100;
+
+  set('cpiVal', cpi.toFixed(2));
+  set('cpiSub', `YoY: <span style="color:var(--${yoy > 4 ? 'red' : yoy > 2 ? 'amber' : 'green'})">${yoy.toFixed(2)}%</span> &nbsp;·&nbsp; Source: BLS`);
+  set('ffVal', ff.toFixed(2) + '<span class="oc-unit">%</span>');
+  set('tbill3mVal', t3m.toFixed(2) + '<span class="oc-unit">%</span>');
+  set('tbill10yVal', t10y.toFixed(2) + '<span class="oc-unit">%</span>');
+
+  const freshBadge = d.is_fresh
+    ? '<span class="badge fresh">FRESH</span>'
+    : '<span class="badge stale">STALE</span>';
+  set('freshnessVal', d.is_fresh ? '<span style="color:var(--green)">LIVE</span>' : '<span style="color:var(--amber)">STALE</span>');
+  set('freshnessSub', `Last update: ${d.last_update ? new Date(d.last_update).toLocaleString() : '—'}`);
+  set('roundBadge', d.round_id || 0);
+
+  // Ticker
+  const cpiStr = cpi.toFixed(2);
+  const yoyStr = `${yoy > 0 ? '+' : ''}${yoy.toFixed(2)}%`;
+  ['t-cpi','t-cpi2'].forEach(id => { const el = document.getElementById(id); if(el) el.textContent = cpiStr; });
+  ['t-ff','t-ff2'].forEach(id => { const el = document.getElementById(id); if(el) el.textContent = ff.toFixed(2) + '%'; });
+  ['t-3m','t-3m2'].forEach(id => { const el = document.getElementById(id); if(el) el.textContent = t3m.toFixed(2) + '%'; });
+  ['t-10y','t-10y2'].forEach(id => { const el = document.getElementById(id); if(el) el.textContent = t10y.toFixed(2) + '%'; });
+  document.getElementById('t-round').textContent = d.round_id || 0;
+  document.getElementById('t-fresh').textContent = d.is_fresh ? 'LIVE' : 'STALE';
+
+  // Flash updated cards
+  ['card-cpi','card-ff','card-3m','card-10y'].forEach(id => {
+    const el = document.getElementById(id);
+    el.classList.add('flash');
+    setTimeout(() => el.classList.remove('flash'), 1000);
+  });
+}
+
+function renderSparkline(history) {
+  const el = document.getElementById('sparkline');
+  if (!history.length) return;
+  const max = Math.max(...history);
+  const min = Math.min(...history);
+  const range = max - min || 1;
+  el.innerHTML = history.map((v, i) => {
+    const pct = ((v - min) / range) * 85 + 15;
+    const label = (v / 100).toFixed(2);
+    const isLatest = i === history.length - 1;
+    return `<div class="spark-bar" data-val="${label}" style="height:${pct}%;${isLatest ? 'background:var(--amber)' : ''}"></div>`;
+  }).join('');
+}
+
+function renderHistory() {
+  const body = document.getElementById('historyBody');
+  const d = STATE.oracleData;
+  const roundId = d.round_id;
+  if (!roundId) return;
+
+  const row = document.createElement('div');
+  row.className = 'history-row new-row';
+  const dateStr = d.last_update ? new Date(d.last_update).toLocaleDateString() : '—';
+  const cpi = (d.cpi / 100).toFixed(2);
+  const yoy = (d.cpi_yoy_bps / 100).toFixed(2) + '%';
+  const t3m = (d.tbill_3m_bps / 100).toFixed(2) + '%';
+  const t10y = (d.tbill_10y_bps / 100).toFixed(2) + '%';
+  row.innerHTML = `
+    <div style="color:var(--amber)">${roundId}</div>
+    <div style="color:var(--text-dim)">${dateStr}</div>
+    <div>${cpi}</div>
+    <div style="color:var(--${d.cpi_yoy_bps > 400 ? 'red' : 'green'})">${yoy}</div>
+    <div>${t3m}</div>
+    <div>${t10y}</div>
+    <div style="color:var(--text-dim);font-size:10px">Pending tx hash...</div>
+  `;
+  body.insertBefore(row, body.firstChild);
+
+  // Keep last 10 rows
+  while (body.children.length > 10) body.removeChild(body.lastChild);
+}
+
+// ============================================================
+//  Asset Management
+// ============================================================
+async function loadAssets() {
+  try {
+    if (!STATE.connected || CONTRACTS.factory === '0x0') {
+      renderDemoAssets();
+      return;
+    }
+
+    const provider = STATE.provider;
+
+    const countRes = await provider.callContract({
+      contractAddress: CONTRACTS.factory,
+      entrypoint: 'get_rwa_count',
+      calldata: [],
+    });
+
+    const count = parseInt((countRes.result || countRes)[0], 16);
+    document.getElementById('t-count').textContent = count;
+    set('assetCount', `${count} asset${count !== 1 ? 's' : ''}`);
+
+    const assets = [];
+    for (let i = 1; i <= count; i++) {
+      const metaRes = await provider.callContract({
+        contractAddress: CONTRACTS.factory,
+        entrypoint: 'get_rwa_metadata',
+        calldata: [i.toString()],
+      });
+
+      const navRes = await provider.callContract({
+        contractAddress: CONTRACTS.factory,
+        entrypoint: 'get_rwa_nav',
+        calldata: [i.toString()],
+      });
+
+      const raw = metaRes.result || metaRes;
+      assets.push({
+        id: i,
+        asset_type: parseInt(raw[0], 16),
+        name: felt252ToString(raw[1]),
+        symbol: felt252ToString(raw[2]),
+        isin: felt252ToString(raw[3]),
+        issuer: felt252ToString(raw[4]),
+        maturity_timestamp: parseInt(raw[5], 16),
+        par_value: parseInt(raw[6], 16),
+        yield_basis_points: parseInt(raw[7], 16),
+        inflation_indexed: parseInt(raw[8], 16) !== 0,
+        token_address: raw[9],
+        vault_address: raw[10],
+        is_active: parseInt(raw[15], 16) !== 0,
+        nav: parseInt((navRes.result || navRes)[0], 16),
+      });
+    }
+
+    STATE.assets = assets;
+    renderAssetsTable(assets);
+
+  } catch (e) {
+    log('Load assets failed: ' + e.message, 'err');
+    renderDemoAssets();
+  }
+}
+
+function renderDemoAssets() {
+  // Demo assets using real US Treasury data
+  const d = STATE.oracleData;
+  const cpi = d.cpi;
+  const baseCpi = 30500; // hypothetical base
+
+  STATE.assets = [
+    {
+      id: 1,
+      asset_type: 0,
+      symbol: 'USTN2Y',
+      isin: 'US912828YE91',
+      yield_basis_points: 478,
+      inflation_indexed: false,
+      par_value: 10000,
+      nav: 10000,
+      maturity_timestamp: Math.floor(Date.now() / 1000) + 63072000,
+      is_active: true,
+    },
+    {
+      id: 2,
+      asset_type: 4,
+      symbol: 'TIPS5Y',
+      isin: 'US912828B816',
+      yield_basis_points: 176,
+      inflation_indexed: true,
+      par_value: 10000,
+      nav: Math.round(10000 * cpi / baseCpi),
+      maturity_timestamp: Math.floor(Date.now() / 1000) + 157680000,
+      is_active: true,
+    },
+    {
+      id: 3,
+      asset_type: 0,
+      symbol: 'USTB3M',
+      isin: 'US912796ZX09',
+      yield_basis_points: 529,
+      inflation_indexed: false,
+      par_value: 10000,
+      nav: 10000,
+      maturity_timestamp: Math.floor(Date.now() / 1000) + 7776000,
+      is_active: true,
+    },
+  ];
+  renderAssetsTable(STATE.assets);
+  set('assetCount', `${STATE.assets.length} assets`);
+  document.getElementById('t-count').textContent = STATE.assets.length;
+}
+
+const TYPE_NAMES  = ['T-Bill','Real Estate','Commodity','Corp Bond','TIPS'];
+const TYPE_CLASSES= ['type-tbill','type-re','type-commodity','type-corp','type-tips'];
+
+function renderAssetsTable(assets) {
+  const tbody = document.getElementById('rwaTableBody');
+  if (!assets.length) {
+    tbody.innerHTML = '<tr><td colspan="9" style="color:var(--muted);text-align:center;padding:32px;font-family:var(--mono);font-size:11px">No assets found.</td></tr>';
+    return;
+  }
+
+  tbody.innerHTML = assets.map(a => {
+    const typeName  = TYPE_NAMES[a.asset_type]  || 'Unknown';
+    const typeCls   = TYPE_CLASSES[a.asset_type] || '';
+    const yieldPct  = (a.yield_basis_points / 100).toFixed(2);
+    const navStr    = '$' + (a.nav / 100).toFixed(2);
+    const matDate   = a.maturity_timestamp > 0
+      ? new Date(a.maturity_timestamp * 1000).toLocaleDateString('en-US', {year:'2-digit',month:'short'})
+      : 'Perpetual';
+    const indexed   = a.inflation_indexed
+      ? '<span class="indexed-icon">✦ CPI</span>'
+      : '<span style="color:var(--muted);font-size:10px">—</span>';
+    const isMatured = a.maturity_timestamp > 0 && a.maturity_timestamp < Date.now() / 1000;
+
+    return `<tr onclick="selectAsset(${a.id})" id="row-${a.id}">
+      <td style="color:var(--muted)">${a.id}</td>
+      <td style="color:var(--amber);font-weight:700">${a.symbol || '—'}</td>
+      <td><span class="type-badge ${typeCls}">${typeName}</span></td>
+      <td class="addr">${a.isin || '—'}</td>
+      <td class="yield-val">${yieldPct}%</td>
+      <td class="nav-val">${navStr}</td>
+      <td>${indexed}</td>
+      <td style="color:var(--text-dim);font-size:11px;${isMatured ? 'color:var(--red)' : ''}">${matDate}</td>
+      <td><button class="action-btn" onclick="event.stopPropagation();selectAsset(${a.id})">SELECT</button></td>
+    </tr>`;
+  }).join('');
+}
+
+function selectAsset(id) {
+  STATE.selectedAsset = STATE.assets.find(a => a.id === id);
+  if (!STATE.selectedAsset) return;
+
+  // Deselect all rows
+  document.querySelectorAll('.rwa-table tr').forEach(r => r.classList.remove('selected'));
+  document.getElementById('row-' + id)?.classList.add('selected');
+
+  renderPositionPanel(STATE.selectedAsset);
+  document.getElementById('positionPanel').style.display = 'block';
+}
+
+function renderPositionPanel(asset) {
+  const d = STATE.oracleData;
+  const cpi = d.cpi / 100;
+  const baseCpi = 305.00; // hypothetical
+  const nav = asset.nav / 100;
+  const yieldPct = (asset.yield_basis_points / 100).toFixed(2);
+
+  // Inflation P&L calculation
+  const inflAdj = asset.inflation_indexed
+    ? ((cpi - baseCpi) / baseCpi * 100).toFixed(2)
+    : '0.00';
+  const inflColor = parseFloat(inflAdj) > 0 ? 'green' : 'red';
+  const inflSign = parseFloat(inflAdj) > 0 ? '+' : '';
+
+  document.getElementById('positionTitle').textContent = `${asset.symbol || 'ASSET ' + asset.id} — POSITION`;
+
+  const rows = [
+    ['NAV / Token', `<span class="amber">$${nav.toFixed(2)}</span>`],
+    ['Yield Rate', `<span class="green">${yieldPct}%</span> p.a.`],
+    ['Inflation Indexed', asset.inflation_indexed ? '<span class="green">YES (CPI-linked)</span>' : '<span style="color:var(--muted)">NO</span>'],
+    ['Your Balance', '<span style="color:var(--muted)">Connect wallet</span>'],
+    ['Accrued Yield', '<span style="color:var(--muted)">—</span>'],
+    ['Inflation P&L', `<span class="${inflColor}">${inflSign}${inflAdj}%</span>`],
+  ];
+
+  document.getElementById('positionRows').innerHTML = rows.map(([k, v]) =>
+    `<div class="position-row">
+      <span class="position-key">${k}</span>
+      <span class="position-val">${v}</span>
+    </div>`
+  ).join('');
+
+  log(`Selected asset: ${asset.symbol || 'ID=' + asset.id} (NAV $${nav.toFixed(2)})`, 'info');
+}
+
+// ============================================================
+//  Create RWA — calls RWAFactory.create_rwa()
+// ============================================================
+async function createRWA() {
+  const name   = document.getElementById('f-name').value.trim();
+  const symbol = document.getElementById('f-symbol').value.trim();
+  const isin   = document.getElementById('f-isin').value.trim();
+  const type   = document.getElementById('f-type').value;
+  const par    = document.getElementById('f-par').value;
+  const yld    = document.getElementById('f-yield').value;
+  const mat    = document.getElementById('f-maturity').value;
+  const indexed= document.getElementById('f-indexed').checked;
+
+  if (!name || !symbol) {
+    showToast('Name and Symbol required', 'red');
+    return;
+  }
+
+  const btn = document.getElementById('createBtn');
+  btn.disabled = true;
+  btn.textContent = 'DEPLOYING...';
+
+  log(`Creating RWA: ${symbol} (${TYPE_NAMES[type]})`, 'info');
+
+  try {
+    if (!STATE.connected || CONTRACTS.factory === '0x0') {
+      // Demo mode — add to local list
+      await sleep(1500);
+
+      const now = Math.floor(Date.now() / 1000);
+      const matTs = mat ? Math.floor(new Date(mat).getTime() / 1000) : 0;
+      const parCents = Math.round(parseFloat(par) * 100);
+      const d = STATE.oracleData;
+      const nav = indexed ? Math.round(parCents * d.cpi / 30500) : parCents;
+
+      const newAsset = {
+        id: STATE.assets.length + 1,
+        asset_type: parseInt(type),
+        symbol,
+        isin: isin || 'UNLISTED',
+        yield_basis_points: parseInt(yld),
+        inflation_indexed: indexed,
+        par_value: parCents,
+        nav,
+        maturity_timestamp: matTs,
+        is_active: true,
+      };
+      STATE.assets.push(newAsset);
+      renderAssetsTable(STATE.assets);
+      set('assetCount', `${STATE.assets.length} assets`);
+      showToast(`${symbol} created (demo mode)`, 'green');
+      log(`Asset created: ${symbol} — ${TYPE_NAMES[type]}, yield ${(parseInt(yld)/100).toFixed(2)}%`, 'info');
+      return;
+    }
+
+    // Real Starknet call
+    const matTs = mat ? Math.floor(new Date(mat).getTime() / 1000) : 0;
+    const parCents = Math.round(parseFloat(par) * 100);
+
+    // Encode felt252 from string
+    const nameHex = '0x' + [...name].map(c => c.charCodeAt(0).toString(16)).join('');
+    const symbolHex = '0x' + [...symbol].map(c => c.charCodeAt(0).toString(16)).join('');
+    const isinHex = isin ? '0x' + [...isin].map(c => c.charCodeAt(0).toString(16)).join('') : '0x0';
+    const supCap_low = '0xffffffffffffffffffffffffffffffff';
+    const supCap_high = '0x0';
+
+    const calldata = [
+      type,               // asset_type
+      nameHex,            // name
+      symbolHex,          // symbol
+      isinHex,            // isin
+      '0x55535f5452454153555259', // issuer = 'US_TREASURY' hex
+      matTs.toString(),   // maturity_timestamp
+      parCents.toString(),// par_value
+      parseInt(yld).toString(), // yield_basis_points
+      indexed ? '1' : '0',// inflation_indexed
+      supCap_low,         // total_supply_cap.low
+      supCap_high,        // total_supply_cap.high
+    ];
+
+    const result = await STATE.account.execute({
+      contractAddress: CONTRACTS.factory,
+      entrypoint: 'create_rwa',
+      calldata,
+    });
+
+    log(`create_rwa tx: ${result.transaction_hash}`, 'info');
+    showToast(`${symbol} deploying... ${result.transaction_hash.slice(0,12)}`, 'green');
+
+    await STATE.provider.waitForTransaction(result.transaction_hash);
+    showToast(`${symbol} deployed ✓`, 'green');
+    await loadAssets();
+
+  } catch (e) {
+    log('create_rwa failed: ' + e.message, 'err');
+    showToast('Deploy failed: ' + e.message.slice(0, 60), 'red');
+  } finally {
+    btn.disabled = false;
+    btn.textContent = 'DEPLOY RWA TOKEN + VAULT';
+  }
+}
+
+// ============================================================
+//  Vault Interactions
+// ============================================================
+async function depositToVault() {
+  if (!STATE.selectedAsset) { showToast('Select an asset first', 'red'); return; }
+  const amount = document.getElementById('f-amount').value;
+  if (!amount || parseFloat(amount) <= 0) { showToast('Enter deposit amount', 'red'); return; }
+
+  log(`Deposit $${amount} USDC → ${STATE.selectedAsset.symbol} vault`, 'info');
+
+  if (!STATE.connected) {
+    showToast(`Demo: deposit $${amount} would mint ${(parseFloat(amount) / (STATE.selectedAsset.nav / 100)).toFixed(4)} tokens`, 'green');
+    return;
+  }
+
+  try {
+    const amountMicroUsdc = BigInt(Math.round(parseFloat(amount) * 1e6)).toString();
+
+    const result = await STATE.account.execute({
+      contractAddress: STATE.selectedAsset.vault_address,
+      entrypoint: 'deposit',
+      calldata: [amountMicroUsdc, '0x0'], // u256: low, high
+    });
+
+    log(`Deposit tx: ${result.transaction_hash}`, 'info');
+    showToast(`Depositing $${amount}...`, 'green');
+    await STATE.provider.waitForTransaction(result.transaction_hash);
+    showToast(`Deposit confirmed ✓`, 'green');
+    selectAsset(STATE.selectedAsset.id);
+
+  } catch (e) {
+    log('Deposit failed: ' + e.message, 'err');
+    showToast('Deposit failed', 'red');
+  }
+}
+
+async function redeemFromVault() {
+  if (!STATE.connected) { showToast('Connect wallet to redeem', 'red'); return; }
+  const amount = document.getElementById('f-amount').value;
+  if (!amount) { showToast('Enter token amount to redeem', 'red'); return; }
+
+  log(`Redeem ${amount} tokens from ${STATE.selectedAsset?.symbol} vault`, 'info');
+
+  try {
+    const amountWei = BigInt(Math.round(parseFloat(amount) * 1e18)).toString();
+
+    const result = await STATE.account.execute({
+      contractAddress: STATE.selectedAsset.vault_address,
+      entrypoint: 'redeem',
+      calldata: [amountWei, '0x0'],
+    });
+
+    log(`Redeem tx: ${result.transaction_hash}`, 'info');
+    await STATE.provider.waitForTransaction(result.transaction_hash);
+    showToast('Redemption confirmed ✓', 'green');
+
+  } catch (e) {
+    log('Redeem failed: ' + e.message, 'err');
+    showToast('Redeem failed', 'red');
+  }
+}
+
+async function claimYield() {
+  if (!STATE.connected) { showToast('Connect wallet to claim yield', 'red'); return; }
+  if (!STATE.selectedAsset) { showToast('Select an asset', 'red'); return; }
+
+  log(`Claiming yield from ${STATE.selectedAsset.symbol} vault`, 'info');
+
+  try {
+    const result = await STATE.account.execute({
+      contractAddress: STATE.selectedAsset.vault_address,
+      entrypoint: 'claim_yield',
+      calldata: [],
+    });
+
+    log(`Claim yield tx: ${result.transaction_hash}`, 'info');
+    await STATE.provider.waitForTransaction(result.transaction_hash);
+    showToast('Yield claimed ✓', 'green');
+
+  } catch (e) {
+    log('Claim yield failed: ' + e.message, 'err');
+    showToast('Claim failed', 'red');
+  }
+}
+
+// ============================================================
+//  Utilities
+// ============================================================
+function set(id, html) {
+  const el = document.getElementById(id);
+  if (el) el.innerHTML = html;
+}
+
+function log(msg, type = 'info') {
+  const logEl = document.getElementById('txLog');
+  const div = document.createElement('div');
+  div.className = 'tx-line';
+  const ts = new Date().toLocaleTimeString();
+  const tagClass = type === 'err' ? 'tag-err' : type === 'ok' ? 'tag-ok' : 'tag-inf';
+  const tagLabel = type === 'err' ? 'ERR' : type === 'ok' ? 'OK' : 'INFO';
+  div.innerHTML = `<span class="ts">${ts}</span><span class="tag ${tagClass}">${tagLabel}</span>${msg}`;
+  logEl.insertBefore(div, logEl.firstChild);
+  while (logEl.children.length > 50) logEl.removeChild(logEl.lastChild);
+}
+
+function showToast(msg, type = '') {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.className = 'toast show' + (type === 'green' ? ' green-toast' : type === 'red' ? ' red-toast' : '');
+  clearTimeout(window._toastTimer);
+  window._toastTimer = setTimeout(() => t.classList.remove('show'), 3500);
+}
+
+function felt252ToString(hex) {
+  try {
+    const cleaned = hex.replace('0x', '');
+    let str = '';
+    for (let i = 0; i < cleaned.length; i += 2) {
+      const code = parseInt(cleaned.slice(i, i + 2), 16);
+      if (code > 31 && code < 127) str += String.fromCharCode(code);
+    }
+    return str || hex.slice(0, 12) + '...';
+  } catch { return hex; }
+}
+
+function sleep(ms) { return new Promise(r => setTimeout(r, ms)); }
+
+// ============================================================
+//  Periodic Refresh
+// ============================================================
+function startAutoRefresh() {
+  // Simulate live data updates in demo mode
+  setInterval(() => {
+    if (!STATE.connected) {
+      // Simulate minor CPI drift
+      const drift = (Math.random() - 0.5) * 2;
+      STATE.oracleData.cpi = Math.round(STATE.oracleData.cpi + drift);
+      STATE.oracleData.round_id = (STATE.oracleData.round_id || 0) + 1;
+      STATE.oracleData.last_update = new Date().toISOString();
+      renderOracle(STATE.oracleData);
+      STATE.cpiHistory.push(STATE.oracleData.cpi);
+      if (STATE.cpiHistory.length > 12) STATE.cpiHistory.shift();
+      renderSparkline(STATE.cpiHistory);
+
+      // Update NAV on inflation-indexed assets
+      STATE.assets.forEach(a => {
+        if (a.inflation_indexed) {
+          a.nav = Math.round(a.par_value * STATE.oracleData.cpi / 30500);
+        }
+      });
+      renderAssetsTable(STATE.assets);
+    }
+  }, 8000);
+
+  // Real oracle refresh when connected
+  setInterval(async () => {
+    if (STATE.connected) {
+      await refreshOracleData();
+      await loadAssets();
+    }
+  }, 30000);
+}
+
+// ============================================================
+//  Init
+// ============================================================
+document.addEventListener('DOMContentLoaded', () => {
+  renderOracle(STATE.oracleData);
+  renderSparkline(STATE.cpiHistory);
+  renderDemoAssets();
+  startAutoRefresh();
+  log('Dashboard loaded — demo mode (connect wallet for live data)', 'info');
+  log('Oracle publisher: run `npx ts-node oracle-publisher/index.ts dry-run` to test', 'info');
+});
+</script>
+</body>
+</html>
