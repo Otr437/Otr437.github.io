@@ -1,1 +1,744 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Advanced Proxy Factory - Deploy Your Proxy</title>
+    <script src="https://cdn.jsdelivr.net/npm/ethers@6.9.0/dist/ethers.umd.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
 
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            color: #fff;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        header {
+            background: rgba(0, 0, 0, 0.3);
+            padding: 20px;
+            border-radius: 15px;
+            margin-bottom: 30px;
+            backdrop-filter: blur(10px);
+        }
+
+        h1 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+        }
+
+        .wallet-section {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-top: 20px;
+        }
+
+        .wallet-info {
+            display: flex;
+            gap: 20px;
+            align-items: center;
+        }
+
+        #connectWallet {
+            background: #4CAF50;
+            color: white;
+            border: none;
+            padding: 12px 30px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: bold;
+            transition: all 0.3s;
+        }
+
+        #connectWallet:hover {
+            background: #45a049;
+            transform: scale(1.05);
+        }
+
+        #connectWallet.connected {
+            background: #2196F3;
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+
+        .stat-card {
+            background: rgba(0, 0, 0, 0.3);
+            padding: 20px;
+            border-radius: 10px;
+            backdrop-filter: blur(10px);
+        }
+
+        .stat-value {
+            font-size: 2em;
+            font-weight: bold;
+            color: #4CAF50;
+        }
+
+        .stat-label {
+            margin-top: 5px;
+            opacity: 0.8;
+        }
+
+        .main-content {
+            display: grid;
+            grid-template-columns: 2fr 1fr;
+            gap: 30px;
+        }
+
+        .deployment-section {
+            background: rgba(0, 0, 0, 0.3);
+            padding: 30px;
+            border-radius: 15px;
+            backdrop-filter: blur(10px);
+        }
+
+        .proxy-types {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+            margin: 20px 0;
+        }
+
+        .proxy-card {
+            background: rgba(255, 255, 255, 0.1);
+            padding: 25px;
+            border-radius: 12px;
+            cursor: pointer;
+            transition: all 0.3s;
+            border: 2px solid transparent;
+        }
+
+        .proxy-card:hover {
+            transform: translateY(-5px);
+            background: rgba(255, 255, 255, 0.15);
+            border-color: #4CAF50;
+        }
+
+        .proxy-card.selected {
+            border-color: #4CAF50;
+            background: rgba(76, 175, 80, 0.2);
+        }
+
+        .proxy-card h3 {
+            margin-bottom: 10px;
+            color: #4CAF50;
+        }
+
+        .deploy-form {
+            margin-top: 30px;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: bold;
+        }
+
+        input, textarea {
+            width: 100%;
+            padding: 12px;
+            border-radius: 8px;
+            border: none;
+            background: rgba(255, 255, 255, 0.1);
+            color: white;
+            font-size: 14px;
+        }
+
+        input::placeholder, textarea::placeholder {
+            color: rgba(255, 255, 255, 0.5);
+        }
+
+        textarea {
+            min-height: 80px;
+            font-family: monospace;
+        }
+
+        .deploy-btn {
+            width: 100%;
+            padding: 15px;
+            background: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 18px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .deploy-btn:hover:not(:disabled) {
+            background: #45a049;
+            transform: scale(1.02);
+        }
+
+        .deploy-btn:disabled {
+            background: #666;
+            cursor: not-allowed;
+        }
+
+        .activity-section {
+            background: rgba(0, 0, 0, 0.3);
+            padding: 20px;
+            border-radius: 15px;
+            backdrop-filter: blur(10px);
+            max-height: 800px;
+            overflow-y: auto;
+        }
+
+        .activity-item {
+            background: rgba(255, 255, 255, 0.05);
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 15px;
+            border-left: 4px solid #4CAF50;
+        }
+
+        .activity-item.pending {
+            border-left-color: #FFC107;
+        }
+
+        .activity-time {
+            font-size: 0.85em;
+            opacity: 0.7;
+        }
+
+        .pending-section {
+            margin-bottom: 30px;
+        }
+
+        .pending-item {
+            background: rgba(255, 193, 7, 0.1);
+            border-left-color: #FFC107;
+        }
+
+        .address {
+            font-family: monospace;
+            font-size: 0.9em;
+            color: #4CAF50;
+            word-break: break-all;
+        }
+
+        .status-indicator {
+            display: inline-block;
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            margin-right: 8px;
+        }
+
+        .status-indicator.connected {
+            background: #4CAF50;
+            box-shadow: 0 0 10px #4CAF50;
+        }
+
+        .status-indicator.pending {
+            background: #FFC107;
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+
+        .notification {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: rgba(0, 0, 0, 0.9);
+            padding: 20px;
+            border-radius: 10px;
+            border-left: 4px solid #4CAF50;
+            max-width: 400px;
+            z-index: 1000;
+            animation: slideIn 0.3s;
+        }
+
+        @keyframes slideIn {
+            from {
+                transform: translateX(400px);
+                opacity: 0;
+            }
+            to {
+                transform: translateX(0);
+                opacity: 1;
+            }
+        }
+
+        .notification.error {
+            border-left-color: #f44336;
+        }
+
+        .my-proxies {
+            margin-top: 30px;
+            background: rgba(255, 255, 255, 0.05);
+            padding: 20px;
+            border-radius: 10px;
+        }
+
+        .proxy-list-item {
+            background: rgba(0, 0, 0, 0.2);
+            padding: 15px;
+            margin-bottom: 10px;
+            border-radius: 8px;
+        }
+
+        .fee-display {
+            background: rgba(255, 193, 7, 0.2);
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+
+        .fee-amount {
+            font-size: 1.5em;
+            font-weight: bold;
+            color: #FFC107;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>🚀 Advanced Proxy Factory</h1>
+            <p>Deploy secure, feature-rich proxies with one click</p>
+            <div class="wallet-section">
+                <div class="wallet-info">
+                    <span class="status-indicator" id="statusIndicator"></span>
+                    <span id="walletAddress">Not Connected</span>
+                    <span id="networkInfo"></span>
+                </div>
+                <button id="connectWallet">Connect Wallet</button>
+            </div>
+        </header>
+
+        <div class="stats-grid">
+            <div class="stat-card">
+                <div class="stat-value" id="totalDeployed">0</div>
+                <div class="stat-label">Total Deployed</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value" id="activeConnections">0</div>
+                <div class="stat-label">Live Connections</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value" id="pendingCount">0</div>
+                <div class="stat-label">Pending Deployments</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value" id="userProxies">0</div>
+                <div class="stat-label">Your Proxies</div>
+            </div>
+        </div>
+
+        <div class="main-content">
+            <div class="deployment-section">
+                <h2>Deploy New Proxy</h2>
+                
+                <div class="fee-display">
+                    <div>Deployment Fee</div>
+                    <div class="fee-amount" id="feeDisplay">Loading...</div>
+                </div>
+
+                <h3>Select Proxy Type</h3>
+                <div class="proxy-types">
+                    <div class="proxy-card" data-type="standard">
+                        <h3>🔐 Standard</h3>
+                        <p>Gnosis Safe style multisig wallet with threshold signatures</p>
+                    </div>
+                    <div class="proxy-card" data-type="zksnark">
+                        <h3>🕶️ zkSNARK</h3>
+                        <p>Privacy-preserving deposits and withdrawals with zero-knowledge proofs</p>
+                    </div>
+                    <div class="proxy-card" data-type="vault">
+                        <h3>🏦 Vault</h3>
+                        <p>Secure vault with timelocks and guardian approvals</p>
+                    </div>
+                    <div class="proxy-card" data-type="mixer">
+                        <h3>🌪️ Mixer</h3>
+                        <p>Tornado Cash style privacy mixer for anonymous transactions</p>
+                    </div>
+                    <div class="proxy-card" data-type="multi">
+                        <h3>⚡ Multi</h3>
+                        <p>Dual implementation proxy with advanced routing</p>
+                    </div>
+                </div>
+
+                <div class="deploy-form">
+                    <div class="form-group">
+                        <label>Initialization Data (Optional)</label>
+                        <textarea id="initData" placeholder='e.g., 0x or leave empty'></textarea>
+                        <small>Hex-encoded calldata for setup function</small>
+                    </div>
+                    <div class="form-group">
+                        <label>Salt (for CREATE2)</label>
+                        <input type="number" id="salt" value="1" min="0">
+                        <small>Unique number for deterministic address</small>
+                    </div>
+                    <button class="deploy-btn" id="deployBtn" disabled>Select Proxy Type to Deploy</button>
+                </div>
+
+                <div class="my-proxies">
+                    <h3>Your Deployed Proxies</h3>
+                    <div id="myProxiesList">
+                        <p style="opacity: 0.6;">Connect wallet to see your proxies</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="activity-section">
+                <h2>Live Activity</h2>
+                
+                <div class="pending-section">
+                    <h3>Pending Transactions</h3>
+                    <div id="pendingList">
+                        <p style="opacity: 0.6;">No pending transactions</p>
+                    </div>
+                </div>
+
+                <h3>Recent Deployments</h3>
+                <div id="activityList">
+                    <p style="opacity: 0.6;">Waiting for deployments...</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Configuration
+        const FACTORY_ADDRESS = 'YOUR_FACTORY_ADDRESS';
+        const BACKEND_URL = 'http://localhost:3001';
+        const WS_URL = 'ws://localhost:3001';
+
+        const FACTORY_ABI = [
+            "function deployStandardProxy(bytes memory initializer, uint256 salt) external payable returns (address)",
+            "function deployZkSnarkProxy(bytes memory initializer, uint256 salt) external payable returns (address)",
+            "function deployVaultProxy(bytes memory initializer, uint256 salt) external payable returns (address)",
+            "function deployMixerProxy(bytes memory initializer, uint256 salt) external payable returns (address)",
+            "function deployMultiProxy(bytes memory initializer, uint256 salt) external payable returns (address)",
+            "function getUserProxies(address user) external view returns (address[])",
+            "function deploymentFee() external view returns (uint256)",
+            "function totalProxiesDeployed() external view returns (uint256)"
+        ];
+
+        // State
+        let provider = null;
+        let signer = null;
+        let factory = null;
+        let userAddress = null;
+        let ws = null;
+        let selectedProxyType = null;
+
+        // Elements
+        const connectBtn = document.getElementById('connectWallet');
+        const walletAddressEl = document.getElementById('walletAddress');
+        const statusIndicator = document.getElementById('statusIndicator');
+        const deployBtn = document.getElementById('deployBtn');
+        const proxyCards = document.querySelectorAll('.proxy-card');
+        const activityList = document.getElementById('activityList');
+        const pendingList = document.getElementById('pendingList');
+        const myProxiesList = document.getElementById('myProxiesList');
+
+        // Connect Wallet
+        connectBtn.addEventListener('click', async () => {
+            if (typeof window.ethereum === 'undefined') {
+                showNotification('Please install MetaMask!', 'error');
+                return;
+            }
+
+            try {
+                await window.ethereum.request({ method: 'eth_requestAccounts' });
+                provider = new ethers.BrowserProvider(window.ethereum);
+                signer = await provider.getSigner();
+                userAddress = await signer.getAddress();
+                factory = new ethers.Contract(FACTORY_ADDRESS, FACTORY_ABI, signer);
+
+                walletAddressEl.textContent = `${userAddress.slice(0, 6)}...${userAddress.slice(-4)}`;
+                connectBtn.textContent = 'Connected';
+                connectBtn.classList.add('connected');
+                statusIndicator.classList.add('connected');
+
+                const network = await provider.getNetwork();
+                document.getElementById('networkInfo').textContent = `Chain: ${network.chainId}`;
+
+                await loadUserProxies();
+                await loadStats();
+                showNotification('Wallet connected successfully!');
+            } catch (error) {
+                console.error('Connection error:', error);
+                showNotification('Failed to connect wallet', 'error');
+            }
+        });
+
+        // Select Proxy Type
+        proxyCards.forEach(card => {
+            card.addEventListener('click', () => {
+                proxyCards.forEach(c => c.classList.remove('selected'));
+                card.classList.add('selected');
+                selectedProxyType = card.dataset.type;
+                deployBtn.disabled = false;
+                deployBtn.textContent = `Deploy ${card.querySelector('h3').textContent} Proxy`;
+            });
+        });
+
+        // Deploy Proxy
+        deployBtn.addEventListener('click', async () => {
+            if (!signer || !selectedProxyType) return;
+
+            const initData = document.getElementById('initData').value.trim() || '0x';
+            const salt = parseInt(document.getElementById('salt').value);
+
+            try {
+                deployBtn.disabled = true;
+                deployBtn.textContent = 'Deploying...';
+
+                const fee = await factory.deploymentFee();
+                let tx;
+
+                switch (selectedProxyType) {
+                    case 'standard':
+                        tx = await factory.deployStandardProxy(initData, salt, { value: fee });
+                        break;
+                    case 'zksnark':
+                        tx = await factory.deployZkSnarkProxy(initData, salt, { value: fee });
+                        break;
+                    case 'vault':
+                        tx = await factory.deployVaultProxy(initData, salt, { value: fee });
+                        break;
+                    case 'mixer':
+                        tx = await factory.deployMixerProxy(initData, salt, { value: fee });
+                        break;
+                    case 'multi':
+                        tx = await factory.deployMultiProxy(initData, salt, { value: fee });
+                        break;
+                }
+
+                showNotification(`Transaction submitted: ${tx.hash.slice(0, 10)}...`);
+                
+                const receipt = await tx.wait();
+                showNotification('Proxy deployed successfully!');
+                
+                await loadUserProxies();
+                deployBtn.disabled = false;
+                deployBtn.textContent = `Deploy ${selectedProxyType} Proxy`;
+            } catch (error) {
+                console.error('Deployment error:', error);
+                showNotification(error.message || 'Deployment failed', 'error');
+                deployBtn.disabled = false;
+                deployBtn.textContent = `Deploy ${selectedProxyType} Proxy`;
+            }
+        });
+
+        // Load User Proxies
+        async function loadUserProxies() {
+            if (!factory || !userAddress) return;
+
+            try {
+                const response = await fetch(`${BACKEND_URL}/api/user/${userAddress}`);
+                const data = await response.json();
+
+                document.getElementById('userProxies').textContent = data.proxies.length;
+
+                if (data.deployments.length === 0) {
+                    myProxiesList.innerHTML = '<p style="opacity: 0.6;">No proxies deployed yet</p>';
+                    return;
+                }
+
+                myProxiesList.innerHTML = data.deployments.map(d => `
+                    <div class="proxy-list-item">
+                        <strong>${d.type} Proxy</strong><br>
+                        <span class="address">${d.proxy}</span><br>
+                        <small>Block: ${d.blockNumber}</small>
+                    </div>
+                `).join('');
+            } catch (error) {
+                console.error('Error loading user proxies:', error);
+            }
+        }
+
+        // Load Stats
+        async function loadStats() {
+            try {
+                const response = await fetch(`${BACKEND_URL}/api/stats`);
+                const stats = await response.json();
+
+                document.getElementById('totalDeployed').textContent = stats.totalDeployed;
+                document.getElementById('pendingCount').textContent = stats.pendingTransactions;
+                document.getElementById('feeDisplay').textContent = `${stats.deploymentFee} ETH`;
+            } catch (error) {
+                console.error('Error loading stats:', error);
+            }
+        }
+
+        // WebSocket Connection
+        function connectWebSocket() {
+            ws = new WebSocket(WS_URL);
+
+            ws.onopen = () => {
+                console.log('WebSocket connected');
+                document.getElementById('activeConnections').textContent = '1';
+            };
+
+            ws.onmessage = (event) => {
+                const data = JSON.parse(event.data);
+                handleWebSocketMessage(data);
+            };
+
+            ws.onclose = () => {
+                console.log('WebSocket disconnected, reconnecting...');
+                setTimeout(connectWebSocket, 3000);
+            };
+
+            ws.onerror = (error) => {
+                console.error('WebSocket error:', error);
+            };
+        }
+
+        // Handle WebSocket Messages
+        function handleWebSocketMessage(data) {
+            switch (data.type) {
+                case 'PENDING_TX':
+                    addPendingTransaction(data.data);
+                    break;
+                case 'DEPLOYMENT':
+                    addDeployment(data.data);
+                    removePendingTransaction(data.data.txHash);
+                    if (userAddress && data.data.user.toLowerCase() === userAddress.toLowerCase()) {
+                        loadUserProxies();
+                    }
+                    loadStats();
+                    break;
+                case 'WEBHOOK_DEPLOYMENT':
+                    showNotification(`New deployment detected: ${data.data.type}`);
+                    break;
+            }
+        }
+
+        // Add Pending Transaction
+        function addPendingTransaction(tx) {
+            const existing = document.getElementById(`pending-${tx.hash}`);
+            if (existing) return;
+
+            if (pendingList.querySelector('p')) {
+                pendingList.innerHTML = '';
+            }
+
+            const html = `
+                <div class="activity-item pending-item" id="pending-${tx.hash}">
+                    <span class="status-indicator pending"></span>
+                    <strong>${tx.proxyType} Proxy</strong> deployment pending<br>
+                    <span class="address">${tx.from}</span><br>
+                    <small>Value: ${tx.value} ETH</small>
+                </div>
+            `;
+
+            pendingList.insertAdjacentHTML('afterbegin', html);
+            document.getElementById('pendingCount').textContent = 
+                parseInt(document.getElementById('pendingCount').textContent) + 1;
+        }
+
+        // Remove Pending Transaction
+        function removePendingTransaction(txHash) {
+            const el = document.getElementById(`pending-${txHash}`);
+            if (el) {
+                el.remove();
+                document.getElementById('pendingCount').textContent = 
+                    Math.max(0, parseInt(document.getElementById('pendingCount').textContent) - 1);
+            }
+
+            if (pendingList.children.length === 0) {
+                pendingList.innerHTML = '<p style="opacity: 0.6;">No pending transactions</p>';
+            }
+        }
+
+        // Add Deployment
+        function addDeployment(deployment) {
+            if (activityList.querySelector('p')) {
+                activityList.innerHTML = '';
+            }
+
+            const time = new Date(deployment.timestamp).toLocaleTimeString();
+            const html = `
+                <div class="activity-item">
+                    <span class="status-indicator connected"></span>
+                    <strong>${deployment.type} Proxy</strong> deployed<br>
+                    <span class="address">${deployment.proxy}</span><br>
+                    <small>By: ${deployment.user.slice(0, 10)}... | Block: ${deployment.blockNumber}</small><br>
+                    <span class="activity-time">${time}</span>
+                </div>
+            `;
+
+            activityList.insertAdjacentHTML('afterbegin', html);
+
+            // Keep only last 20
+            while (activityList.children.length > 20) {
+                activityList.removeChild(activityList.lastChild);
+            }
+        }
+
+        // Show Notification
+        function showNotification(message, type = 'success') {
+            const notification = document.createElement('div');
+            notification.className = `notification ${type}`;
+            notification.textContent = message;
+            document.body.appendChild(notification);
+
+            setTimeout(() => {
+                notification.remove();
+            }, 5000);
+        }
+
+        // Load Recent Deployments
+        async function loadRecentDeployments() {
+            try {
+                const response = await fetch(`${BACKEND_URL}/api/deployments?limit=20`);
+                const deployments = await response.json();
+
+                deployments.forEach(addDeployment);
+            } catch (error) {
+                console.error('Error loading deployments:', error);
+            }
+        }
+
+        // Initialize
+        async function init() {
+            connectWebSocket();
+            await loadStats();
+            await loadRecentDeployments();
+            
+            // Auto-connect if already connected
+            if (window.ethereum && window.ethereum.selectedAddress) {
+                connectBtn.click();
+            }
+
+            // Refresh stats every 30 seconds
+            setInterval(loadStats, 30000);
+        }
+
+        init();
+    </script>
+</body>
+</html>
