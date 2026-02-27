@@ -1,1 +1,1465 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>RWA Protocol — Starknet</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Syne:wght@400;600;700;800&display=swap" rel="stylesheet"/>
+<style>
+  /* ============================================================
+     Design direction: Industrial Terminal / Data-first
+     Think Bloomberg terminal meets brutalist web design.
+     Monospaced data, sharp grids, amber-on-black palette,
+     with tactical use of green for positive and red for negative.
+  ============================================================ */
 
+  :root {
+    --bg:        #0a0a0a;
+    --surface:   #111111;
+    --surface2:  #191919;
+    --border:    #2a2a2a;
+    --amber:     #f5a623;
+    --amber-dim: #7a5210;
+    --green:     #00d48a;
+    --red:       #ff4545;
+    --blue:      #4fa3ff;
+    --muted:     #555;
+    --text:      #e8e0d0;
+    --text-dim:  #7a7065;
+    --mono:      'Space Mono', monospace;
+    --sans:      'Syne', sans-serif;
+    --ticker-h:  36px;
+  }
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  html { background: var(--bg); color: var(--text); font-family: var(--sans); }
+
+  body {
+    min-height: 100vh;
+    background: var(--bg);
+    background-image:
+      linear-gradient(rgba(245,166,35,0.02) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(245,166,35,0.02) 1px, transparent 1px);
+    background-size: 40px 40px;
+  }
+
+  /* ---- Ticker Bar ---- */
+  .ticker-wrap {
+    position: fixed; top: 0; left: 0; right: 0; z-index: 100;
+    height: var(--ticker-h);
+    background: #0d0d0d;
+    border-bottom: 1px solid var(--amber-dim);
+    overflow: hidden;
+    display: flex; align-items: center;
+  }
+  .ticker-label {
+    flex-shrink: 0;
+    background: var(--amber);
+    color: #000;
+    font-family: var(--mono);
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 0.1em;
+    padding: 0 12px;
+    height: 100%;
+    display: flex; align-items: center;
+    text-transform: uppercase;
+  }
+  .ticker-track {
+    display: flex;
+    animation: tickerScroll 30s linear infinite;
+    white-space: nowrap;
+    gap: 0;
+  }
+  .ticker-item {
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--text-dim);
+    padding: 0 24px;
+    border-right: 1px solid var(--border);
+    height: var(--ticker-h);
+    display: flex; align-items: center; gap: 8px;
+  }
+  .ticker-item .val { color: var(--amber); font-weight: 700; }
+  .ticker-item .chg { font-size: 10px; }
+  .chg.up   { color: var(--green); }
+  .chg.down { color: var(--red); }
+  @keyframes tickerScroll {
+    0%   { transform: translateX(0); }
+    100% { transform: translateX(-50%); }
+  }
+
+  /* ---- Layout ---- */
+  .shell {
+    margin-top: var(--ticker-h);
+    max-width: 1440px;
+    margin-left: auto;
+    margin-right: auto;
+    padding: 0 24px 80px;
+  }
+
+  /* ---- Header ---- */
+  .hdr {
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-between;
+    padding: 32px 0 24px;
+    border-bottom: 2px solid var(--border);
+    margin-bottom: 32px;
+  }
+  .hdr-title {
+    font-family: var(--sans);
+    font-size: 36px;
+    font-weight: 800;
+    letter-spacing: -1px;
+    line-height: 1;
+  }
+  .hdr-title span { color: var(--amber); }
+  .hdr-sub {
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--muted);
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    margin-top: 6px;
+  }
+  .hdr-status {
+    display: flex; flex-direction: column; align-items: flex-end; gap: 6px;
+  }
+  .status-pill {
+    display: flex; align-items: center; gap: 6px;
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--text-dim);
+    background: var(--surface);
+    border: 1px solid var(--border);
+    padding: 4px 10px;
+    border-radius: 2px;
+  }
+  .status-dot {
+    width: 6px; height: 6px; border-radius: 50%;
+    background: var(--green);
+    box-shadow: 0 0 6px var(--green);
+    animation: pulse 2s ease-in-out infinite;
+  }
+  .status-dot.stale { background: var(--amber); box-shadow: 0 0 6px var(--amber); }
+  @keyframes pulse {
+    0%, 100% { opacity: 1; } 50% { opacity: 0.4; }
+  }
+
+  /* ---- Section Headers ---- */
+  .section-hdr {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 16px;
+  }
+  .section-hdr h2 {
+    font-size: 11px;
+    font-family: var(--mono);
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
+    color: var(--muted);
+  }
+  .section-hdr::after {
+    content: '';
+    flex: 1;
+    height: 1px;
+    background: var(--border);
+  }
+
+  /* ---- Oracle Data Grid ---- */
+  .oracle-grid {
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    gap: 1px;
+    background: var(--border);
+    border: 1px solid var(--border);
+    margin-bottom: 40px;
+  }
+  .oracle-card {
+    background: var(--surface);
+    padding: 20px 16px 16px;
+    position: relative;
+    transition: background 0.15s;
+  }
+  .oracle-card:hover { background: var(--surface2); }
+  .oracle-card::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 2px;
+    background: var(--amber-dim);
+  }
+  .oracle-card.flash::before { background: var(--amber); }
+  .oc-label {
+    font-family: var(--mono);
+    font-size: 9px;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: var(--text-dim);
+    margin-bottom: 8px;
+  }
+  .oc-value {
+    font-family: var(--mono);
+    font-size: 26px;
+    font-weight: 700;
+    color: var(--amber);
+    line-height: 1;
+    letter-spacing: -1px;
+  }
+  .oc-unit {
+    font-size: 12px;
+    color: var(--text-dim);
+    font-weight: 400;
+  }
+  .oc-sub {
+    font-family: var(--mono);
+    font-size: 10px;
+    color: var(--text-dim);
+    margin-top: 8px;
+  }
+  .oc-sub .badge {
+    display: inline-block;
+    padding: 2px 6px;
+    font-size: 9px;
+    font-weight: 700;
+    border-radius: 2px;
+    letter-spacing: 0.05em;
+  }
+  .badge.fresh { background: rgba(0,212,138,0.15); color: var(--green); }
+  .badge.stale { background: rgba(245,166,35,0.15); color: var(--amber); }
+
+  /* ---- Main Grid ---- */
+  .main-grid {
+    display: grid;
+    grid-template-columns: 1fr 380px;
+    gap: 24px;
+    margin-bottom: 40px;
+  }
+
+  /* ---- RWA Table ---- */
+  .panel {
+    background: var(--surface);
+    border: 1px solid var(--border);
+  }
+  .panel-hdr {
+    padding: 14px 20px;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+  .panel-hdr h3 {
+    font-family: var(--mono);
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: var(--muted);
+  }
+  .panel-count {
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--amber);
+    background: rgba(245,166,35,0.1);
+    padding: 2px 8px;
+  }
+
+  .rwa-table { width: 100%; border-collapse: collapse; }
+  .rwa-table th {
+    font-family: var(--mono);
+    font-size: 9px;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: var(--muted);
+    text-align: left;
+    padding: 10px 16px;
+    border-bottom: 1px solid var(--border);
+    background: var(--bg);
+  }
+  .rwa-table td {
+    font-family: var(--mono);
+    font-size: 12px;
+    padding: 12px 16px;
+    border-bottom: 1px solid var(--border);
+    vertical-align: middle;
+  }
+  .rwa-table tr:hover td { background: var(--surface2); cursor: pointer; }
+  .rwa-table tr.selected td { background: rgba(245,166,35,0.05); }
+
+  .type-badge {
+    display: inline-block;
+    padding: 2px 7px;
+    font-size: 9px;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    border-radius: 1px;
+  }
+  .type-tbill    { background: rgba(79,163,255,0.15); color: var(--blue); }
+  .type-re       { background: rgba(0,212,138,0.12); color: var(--green); }
+  .type-commodity{ background: rgba(245,166,35,0.15); color: var(--amber); }
+  .type-corp     { background: rgba(255,255,255,0.08); color: #aaa; }
+  .type-tips     { background: rgba(255,69,69,0.12); color: var(--red); }
+
+  .indexed-icon { color: var(--green); font-size: 10px; }
+  td.nav-val { color: var(--amber); font-weight: 700; }
+  td.yield-val { color: var(--green); }
+  td.addr { color: var(--text-dim); font-size: 10px; }
+
+  .action-btn {
+    background: none;
+    border: 1px solid var(--border);
+    color: var(--text-dim);
+    font-family: var(--mono);
+    font-size: 10px;
+    padding: 4px 10px;
+    cursor: pointer;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    transition: all 0.15s;
+  }
+  .action-btn:hover {
+    border-color: var(--amber);
+    color: var(--amber);
+    background: rgba(245,166,35,0.05);
+  }
+
+  /* ---- Create / Action Panel ---- */
+  .side-panel { display: flex; flex-direction: column; gap: 16px; }
+
+  .form-panel {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    padding: 20px;
+  }
+  .form-panel h3 {
+    font-family: var(--mono);
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
+    color: var(--muted);
+    margin-bottom: 18px;
+    padding-bottom: 10px;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .field { margin-bottom: 14px; }
+  .field label {
+    display: block;
+    font-family: var(--mono);
+    font-size: 9px;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: var(--text-dim);
+    margin-bottom: 6px;
+  }
+  .field input,
+  .field select {
+    width: 100%;
+    background: var(--bg);
+    border: 1px solid var(--border);
+    color: var(--text);
+    font-family: var(--mono);
+    font-size: 12px;
+    padding: 8px 10px;
+    outline: none;
+    transition: border-color 0.15s;
+    -webkit-appearance: none;
+    border-radius: 0;
+  }
+  .field input:focus,
+  .field select:focus { border-color: var(--amber); }
+  .field select option { background: #111; }
+
+  .inline-fields { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+
+  .checkbox-field {
+    display: flex; align-items: center; gap: 8px;
+    margin-bottom: 14px;
+    cursor: pointer;
+  }
+  .checkbox-field input[type=checkbox] {
+    width: 14px; height: 14px;
+    accent-color: var(--amber);
+  }
+  .checkbox-field span {
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--text-dim);
+  }
+
+  .btn-primary {
+    width: 100%;
+    background: var(--amber);
+    border: none;
+    color: #000;
+    font-family: var(--mono);
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    padding: 12px;
+    cursor: pointer;
+    transition: background 0.15s;
+    margin-top: 4px;
+  }
+  .btn-primary:hover { background: #f0c060; }
+  .btn-primary:active { background: #d4901e; }
+  .btn-primary:disabled {
+    background: var(--border);
+    color: var(--muted);
+    cursor: not-allowed;
+  }
+
+  .btn-secondary {
+    flex: 1;
+    background: none;
+    border: 1px solid var(--amber-dim);
+    color: var(--amber);
+    font-family: var(--mono);
+    font-size: 10px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    padding: 10px;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+  .btn-secondary:hover { background: rgba(245,166,35,0.08); }
+
+  /* ---- Position Panel ---- */
+  .position-row {
+    display: flex; justify-content: space-between; align-items: center;
+    padding: 10px 0;
+    border-bottom: 1px solid var(--border);
+    font-family: var(--mono);
+    font-size: 11px;
+  }
+  .position-row:last-child { border-bottom: none; }
+  .position-key { color: var(--text-dim); font-size: 10px; text-transform: uppercase; letter-spacing: 0.08em; }
+  .position-val { color: var(--text); }
+  .position-val.green { color: var(--green); }
+  .position-val.amber { color: var(--amber); }
+  .position-val.red   { color: var(--red); }
+
+  .pnl-bar {
+    height: 4px;
+    background: var(--border);
+    margin: 8px 0 16px;
+    position: relative;
+    overflow: visible;
+  }
+  .pnl-fill {
+    height: 100%;
+    background: var(--green);
+    transition: width 0.6s ease;
+    position: relative;
+  }
+  .pnl-fill.negative { background: var(--red); }
+
+  /* ---- Oracle Round History ---- */
+  .history-panel {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    margin-bottom: 40px;
+  }
+  .history-row {
+    display: grid;
+    grid-template-columns: 60px 90px 100px 100px 100px 100px 1fr;
+    gap: 0;
+    border-bottom: 1px solid var(--border);
+    align-items: center;
+  }
+  .history-row.hdr-row {
+    background: var(--bg);
+    font-family: var(--mono);
+    font-size: 9px;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: var(--muted);
+  }
+  .history-row.hdr-row div,
+  .history-row div {
+    padding: 10px 14px;
+    font-family: var(--mono);
+    font-size: 11px;
+  }
+  .history-row.new-row { animation: flashRow 1s ease; }
+  @keyframes flashRow {
+    0%   { background: rgba(245,166,35,0.12); }
+    100% { background: transparent; }
+  }
+
+  /* ---- Tx Log ---- */
+  .tx-log {
+    background: var(--bg);
+    border: 1px solid var(--border);
+    font-family: var(--mono);
+    font-size: 11px;
+    height: 160px;
+    overflow-y: auto;
+    padding: 8px;
+  }
+  .tx-line {
+    padding: 3px 6px;
+    color: var(--text-dim);
+    border-bottom: 1px solid rgba(255,255,255,0.03);
+  }
+  .tx-line .ts { color: var(--muted); font-size: 9px; margin-right: 8px; }
+  .tx-line .tag { font-size: 9px; padding: 1px 5px; margin-right: 6px; border-radius: 1px; }
+  .tag-ok  { background: rgba(0,212,138,0.15); color: var(--green); }
+  .tag-err { background: rgba(255,69,69,0.15);  color: var(--red); }
+  .tag-inf { background: rgba(79,163,255,0.15); color: var(--blue); }
+
+  /* ---- Chart ---- */
+  .chart-wrap { background: var(--surface); border: 1px solid var(--border); padding: 16px; margin-bottom: 24px; }
+  .chart-title { font-family: var(--mono); font-size: 9px; text-transform: uppercase; letter-spacing: 0.1em; color: var(--muted); margin-bottom: 12px; }
+  .sparkline { display: flex; align-items: flex-end; gap: 3px; height: 60px; }
+  .spark-bar {
+    flex: 1;
+    background: var(--amber-dim);
+    min-height: 4px;
+    transition: height 0.4s ease;
+    position: relative;
+  }
+  .spark-bar:hover { background: var(--amber); }
+  .spark-bar::after {
+    content: attr(data-val);
+    position: absolute;
+    bottom: 100%; left: 50%; transform: translateX(-50%);
+    font-family: var(--mono); font-size: 8px;
+    color: var(--amber);
+    white-space: nowrap;
+    opacity: 0; pointer-events: none;
+    transition: opacity 0.15s;
+    padding-bottom: 2px;
+  }
+  .spark-bar:hover::after { opacity: 1; }
+
+  /* ---- Notification toast ---- */
+  .toast {
+    position: fixed; bottom: 24px; right: 24px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-left: 3px solid var(--amber);
+    padding: 12px 20px;
+    font-family: var(--mono);
+    font-size: 12px;
+    color: var(--text);
+    max-width: 360px;
+    z-index: 999;
+    opacity: 0;
+    transform: translateY(10px);
+    transition: all 0.2s ease;
+    pointer-events: none;
+  }
+  .toast.show { opacity: 1; transform: translateY(0); }
+  .toast.green-toast { border-left-color: var(--green); }
+  .toast.red-toast   { border-left-color: var(--red); }
+
+  /* ---- Responsive ---- */
+  @media (max-width: 1100px) {
+    .oracle-grid { grid-template-columns: repeat(3, 1fr); }
+    .main-grid { grid-template-columns: 1fr; }
+  }
+  @media (max-width: 700px) {
+    .oracle-grid { grid-template-columns: repeat(2, 1fr); }
+    .history-row { grid-template-columns: 50px 80px 90px 90px 90px; }
+    .history-row div:nth-child(6),
+    .history-row div:nth-child(7) { display: none; }
+  }
+</style>
+</head>
+<body>
+
+<!-- ===== LIVE TICKER ===== -->
+<div class="ticker-wrap">
+  <div class="ticker-label">LIVE</div>
+  <div id="ticker" style="overflow:hidden;flex:1">
+    <div class="ticker-track" id="tickerTrack">
+      <!-- duplicated for seamless loop -->
+      <div class="ticker-item">CPI&nbsp;<span class="val" id="t-cpi">—</span> <span class="chg up" id="t-cpi-chg">—</span></div>
+      <div class="ticker-item">FED&nbsp;FUNDS&nbsp;<span class="val" id="t-ff">—</span></div>
+      <div class="ticker-item">3M&nbsp;T-BILL&nbsp;<span class="val" id="t-3m">—</span></div>
+      <div class="ticker-item">10Y&nbsp;TREASURY&nbsp;<span class="val" id="t-10y">—</span></div>
+      <div class="ticker-item">ORACLE&nbsp;ROUND&nbsp;<span class="val" id="t-round">—</span></div>
+      <div class="ticker-item">RWA&nbsp;ASSETS&nbsp;<span class="val" id="t-count">—</span></div>
+      <div class="ticker-item">DATA&nbsp;FRESHNESS&nbsp;<span class="val" id="t-fresh">—</span></div>
+      <!-- duplicate for scroll -->
+      <div class="ticker-item">CPI&nbsp;<span class="val" id="t-cpi2">—</span></div>
+      <div class="ticker-item">FED&nbsp;FUNDS&nbsp;<span class="val" id="t-ff2">—</span></div>
+      <div class="ticker-item">3M&nbsp;T-BILL&nbsp;<span class="val" id="t-3m2">—</span></div>
+      <div class="ticker-item">10Y&nbsp;TREASURY&nbsp;<span class="val" id="t-10y2">—</span></div>
+      <div class="ticker-item">ORACLE&nbsp;ROUND&nbsp;<span class="val">—</span></div>
+      <div class="ticker-item">RWA&nbsp;ASSETS&nbsp;<span class="val">—</span></div>
+      <div class="ticker-item">DATA&nbsp;FRESHNESS&nbsp;<span class="val">—</span></div>
+    </div>
+  </div>
+</div>
+
+<div class="shell">
+
+  <!-- ===== HEADER ===== -->
+  <div class="hdr">
+    <div>
+      <div class="hdr-title">RWA <span>Protocol</span></div>
+      <div class="hdr-sub">Starknet · Tokenized Real World Assets · Inflation Oracle</div>
+    </div>
+    <div class="hdr-status">
+      <div class="status-pill">
+        <div class="status-dot" id="oracleStatusDot"></div>
+        <span id="oracleStatusText">ORACLE CONNECTED</span>
+      </div>
+      <div class="status-pill" id="walletPill" style="cursor:pointer" onclick="connectWallet()">
+        <span id="walletText">CONNECT WALLET</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== ORACLE GRID ===== -->
+  <div class="section-hdr"><h2>Macro Oracle · Round <span id="roundBadge">—</span></h2></div>
+  <div class="oracle-grid">
+    <div class="oracle-card" id="card-cpi">
+      <div class="oc-label">CPI-U Index <span style="font-size:8px">(CUUR0000SA0)</span></div>
+      <div class="oc-value" id="cpiVal">—</div>
+      <div class="oc-sub" id="cpiSub">YoY: —  · Source: BLS</div>
+    </div>
+    <div class="oracle-card" id="card-ff">
+      <div class="oc-label">Fed Funds Rate</div>
+      <div class="oc-value" id="ffVal">—<span class="oc-unit">%</span></div>
+      <div class="oc-sub" id="ffSub">Series: FEDFUNDS · FRED</div>
+    </div>
+    <div class="oracle-card" id="card-3m">
+      <div class="oc-label">3-Month T-Bill</div>
+      <div class="oc-value" id="tbill3mVal">—<span class="oc-unit">%</span></div>
+      <div class="oc-sub" id="tbill3mSub">Series: TB3MS · FRED</div>
+    </div>
+    <div class="oracle-card" id="card-10y">
+      <div class="oc-label">10-Year Treasury</div>
+      <div class="oc-value" id="tbill10yVal">—<span class="oc-unit">%</span></div>
+      <div class="oc-sub" id="tbill10ySub">Series: DGS10 · FRED</div>
+    </div>
+    <div class="oracle-card" id="card-fresh">
+      <div class="oc-label">Oracle Status</div>
+      <div class="oc-value" style="font-size:20px" id="freshnessVal">—</div>
+      <div class="oc-sub" id="freshnessSub">Last update: —</div>
+    </div>
+  </div>
+
+  <!-- ===== CPI SPARKLINE ===== -->
+  <div class="chart-wrap">
+    <div class="chart-title">CPI Index — Round History</div>
+    <div class="sparkline" id="sparkline"></div>
+  </div>
+
+  <!-- ===== MAIN CONTENT ===== -->
+  <div class="main-grid">
+
+    <!-- LEFT: RWA Asset Table -->
+    <div>
+      <div class="panel">
+        <div class="panel-hdr">
+          <h3>Registered RWA Assets</h3>
+          <span class="panel-count" id="assetCount">0 assets</span>
+        </div>
+        <table class="rwa-table">
+          <thead>
+            <tr>
+              <th>#</th>
+              <th>Symbol</th>
+              <th>Type</th>
+              <th>ISIN</th>
+              <th>Yield</th>
+              <th>NAV/Token</th>
+              <th>Inflation</th>
+              <th>Maturity</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody id="rwaTableBody">
+            <tr>
+              <td colspan="9" style="color:var(--muted);text-align:center;padding:32px;font-family:var(--mono);font-size:11px">
+                No assets registered. Deploy a contract and create assets to begin.
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- RIGHT: Side Panels -->
+    <div class="side-panel">
+
+      <!-- Create New RWA -->
+      <div class="form-panel">
+        <h3>Create RWA Asset</h3>
+        <div class="inline-fields">
+          <div class="field">
+            <label>Name</label>
+            <input type="text" id="f-name" placeholder="US Treasury Note" />
+          </div>
+          <div class="field">
+            <label>Symbol</label>
+            <input type="text" id="f-symbol" placeholder="USTN-2Y" />
+          </div>
+        </div>
+        <div class="inline-fields">
+          <div class="field">
+            <label>ISIN</label>
+            <input type="text" id="f-isin" placeholder="US912828YE91" />
+          </div>
+          <div class="field">
+            <label>Asset Type</label>
+            <select id="f-type">
+              <option value="0">Treasury Bill</option>
+              <option value="1">Real Estate</option>
+              <option value="2">Commodity</option>
+              <option value="3">Corporate Bond</option>
+              <option value="4">Inflation Bond (TIPS)</option>
+            </select>
+          </div>
+        </div>
+        <div class="inline-fields">
+          <div class="field">
+            <label>Par Value (USD)</label>
+            <input type="number" id="f-par" placeholder="100" value="100" />
+          </div>
+          <div class="field">
+            <label>Yield (bps)</label>
+            <input type="number" id="f-yield" placeholder="425" value="425" />
+          </div>
+        </div>
+        <div class="field">
+          <label>Maturity Date (blank = perpetual)</label>
+          <input type="date" id="f-maturity" />
+        </div>
+        <div class="checkbox-field">
+          <input type="checkbox" id="f-indexed" />
+          <span>Inflation-Indexed (NAV tracks CPI)</span>
+        </div>
+        <button class="btn-primary" onclick="createRWA()" id="createBtn">
+          DEPLOY RWA TOKEN + VAULT
+        </button>
+      </div>
+
+      <!-- Position / Interact -->
+      <div class="form-panel" id="positionPanel" style="display:none">
+        <h3 id="positionTitle">POSITION</h3>
+        <div id="positionRows"></div>
+        <div style="height:10px"></div>
+        <div class="inline-fields">
+          <div class="field">
+            <label>Amount (USDC)</label>
+            <input type="number" id="f-amount" placeholder="1000" />
+          </div>
+        </div>
+        <div style="display:flex;gap:8px;margin-top:4px">
+          <button class="btn-secondary" onclick="depositToVault()">DEPOSIT</button>
+          <button class="btn-secondary" onclick="redeemFromVault()">REDEEM</button>
+          <button class="btn-secondary" onclick="claimYield()" style="color:var(--green);border-color:rgba(0,212,138,0.3)">CLAIM YIELD</button>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- ===== ORACLE HISTORY ===== -->
+  <div class="section-hdr" style="margin-top:8px"><h2>Oracle Publish History</h2></div>
+  <div class="history-panel">
+    <div class="history-row hdr-row">
+      <div>ROUND</div>
+      <div>DATE</div>
+      <div>CPI INDEX</div>
+      <div>YOY</div>
+      <div>3M T-BILL</div>
+      <div>10Y TREAS.</div>
+      <div>TX HASH</div>
+    </div>
+    <div id="historyBody"></div>
+  </div>
+
+  <!-- ===== TX LOG ===== -->
+  <div class="section-hdr"><h2>Transaction Log</h2></div>
+  <div class="tx-log" id="txLog">
+    <div class="tx-line"><span class="ts">—</span><span class="tag tag-inf">INFO</span>Connect your wallet and configure oracle contract address to begin</div>
+  </div>
+
+</div>
+
+<!-- ===== TOAST ===== -->
+<div class="toast" id="toast"></div>
+
+<script src="https://cdn.jsdelivr.net/npm/starknet@6.11.0/dist/index.min.js"></script>
+<script>
+// ============================================================
+//  RWA Protocol Dashboard
+//
+//  All data comes from the local server (server.js):
+//    GET /api/all              → BLS CPI + FRED rates (server proxies with .env keys)
+//    GET /api/cpi              → BLS CPI only
+//    GET /api/fred?series=X   → any FRED series
+//
+//  Starknet contract calls (wallet needed for writes, RPC for reads):
+//    InflationOracle.cairo  → get_cpi, get_tbill_3m/10y, get_fed_funds,
+//                             is_data_fresh, get_latest_round_id,
+//                             get_cpi_index_base, get_publisher_count
+//    RWAFactory.cairo       → get_rwa_count, get_rwa_metadata, get_rwa_nav,
+//                             create_rwa
+//    RWAToken.cairo         → is_matured, get_inflation_adjustment_factor,
+//                             is_kyc_approved, balance_of
+//    RWAVault.cairo         → get_user_position, get_pending_yield,
+//                             get_inflation_pnl, get_nav_per_token,
+//                             get_total_value_locked, deposit, redeem,
+//                             claim_yield, compound_yield
+// ============================================================
+
+// ── Config (stored in localStorage, set via Settings panel) ──
+const CFG = {
+  get rpcUrl()     { return localStorage.getItem('cfg_rpc')     || 'https://starknet-mainnet.public.blastapi.io/rpc/v0_7'; },
+  get oracleAddr() { return localStorage.getItem('cfg_oracle')  || ''; },
+  get factoryAddr(){ return localStorage.getItem('cfg_factory') || ''; },
+  set rpcUrl(v)    { localStorage.setItem('cfg_rpc',     v); },
+  set oracleAddr(v){ localStorage.setItem('cfg_oracle',  v); },
+  set factoryAddr(v){ localStorage.setItem('cfg_factory', v); },
+};
+
+// ── Runtime state ─────────────────────────────────────────────
+const S = {
+  provider: null, account: null, address: null,
+  macroData: null, assets: [], selectedAsset: null,
+  selectedVault: null, userPosition: null, cpiHistory: [],
+};
+
+// ── Init starknet.js provider as soon as page loads ───────────
+window.addEventListener('load', () => {
+  try {
+    const sn = window.starknet || window.starknetModule;
+    if (sn && sn.RpcProvider) {
+      S.provider = new sn.RpcProvider({ nodeUrl: CFG.rpcUrl });
+      log('RPC ready: ' + CFG.rpcUrl, 'ok');
+    } else {
+      log('starknet.js not available — wallet writes disabled', 'err');
+    }
+  } catch(e) { log('starknet.js init: ' + e.message, 'err'); }
+
+  // Start data load
+  fetchMacroData();
+
+  // Warn if contract addresses not set
+  if (!CFG.oracleAddr)  log('Oracle address not configured — open ⚙ Settings', 'info');
+  if (!CFG.factoryAddr) log('Factory address not configured — open ⚙ Settings', 'info');
+
+  // Refresh every 30 minutes
+  setInterval(fetchMacroData, 30 * 60 * 1000);
+
+  // Add settings button to header
+  const hdr = document.querySelector('.hdr-status');
+  if (hdr) {
+    const btn = document.createElement('div');
+    btn.className = 'status-pill';
+    btn.style.cursor = 'pointer';
+    btn.onclick = openSettings;
+    btn.textContent = '⚙ SETTINGS';
+    hdr.appendChild(btn);
+  }
+});
+
+// ============================================================
+//  Fetch all macro data from our local server
+//  Server reads keys from .env and proxies to BLS + FRED
+// ============================================================
+async function fetchMacroData() {
+  log('Fetching macro data from local server...', 'info');
+  set('freshnessVal', '<span style="color:var(--amber)">LOADING</span>');
+
+  try {
+    const res = await fetch('/api/all');
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({ error: res.statusText }));
+      throw new Error(err.error || 'Server returned ' + res.status);
+    }
+    const d = await res.json();
+
+    S.macroData = d;
+    S.cpiHistory = d.history;
+
+    log('CPI: ' + d.cpi.toFixed(2) + ' (' + d.cpi_period + ') | YoY: ' + d.yoy_pct.toFixed(2) + '%', 'ok');
+    log('TB3MS: ' + d.tbill_3m_pct + '% | DGS10: ' + d.tbill_10y_pct + '% | FEDFUNDS: ' + d.fed_funds_pct + '%', 'ok');
+
+    renderOracleCards(d);
+    renderSparkline(d.history);
+    updateTicker(d);
+    addHistoryRow(d);
+
+    // Also read on-chain oracle state if configured
+    if (CFG.oracleAddr && S.provider) readOnChainOracle();
+
+    // Load factory assets
+    if (CFG.factoryAddr && S.provider) loadFactoryAssets();
+
+  } catch(err) {
+    log('Macro data failed: ' + err.message, 'err');
+    showToast(err.message.includes('fetch') ? 'Server not running — start with: node server/server.js' : err.message, 'red');
+    set('freshnessVal', '<span style="color:var(--red)">SERVER ERROR</span>');
+    set('freshnessSub', err.message.slice(0, 80));
+    ['cpiVal','ffVal','tbill3mVal','tbill10yVal'].forEach(id => {
+      const el = document.getElementById(id);
+      if (el) el.innerHTML = '<span style="color:var(--red);font-size:11px">NO DATA</span>';
+    });
+  }
+}
+
+// ============================================================
+//  Read InflationOracle.cairo
+// ============================================================
+async function readOnChainOracle() {
+  try {
+    const call = (ep, cd) => S.provider.callContract({
+      contractAddress: CFG.oracleAddr, entrypoint: ep, calldata: cd || []
+    }).then(r => r.result || r);
+
+    const [roundR, freshR, baseR, pubR] = await Promise.all([
+      call('get_latest_round_id'),
+      call('is_data_fresh'),
+      call('get_cpi_index_base'),
+      call('get_publisher_count'),
+    ]);
+
+    const roundId  = parseInt(roundR[0], 16);
+    const isFresh  = parseInt(freshR[0], 16) !== 0;
+    const baseCpi  = parseInt(baseR[0], 16);
+    const pubCount = parseInt(pubR[0], 16);
+
+    set('roundBadge', roundId);
+    document.getElementById('t-round').textContent = roundId;
+    document.getElementById('oracleStatusDot').className = 'status-dot' + (isFresh ? '' : ' stale');
+    set('freshnessVal', isFresh
+      ? '<span style="color:var(--green)">LIVE</span>'
+      : '<span style="color:var(--amber)">STALE</span>');
+    set('freshnessSub',
+      'Round ' + roundId + ' · ' + pubCount + ' publisher' + (pubCount !== 1 ? 's' : '') +
+      ' · Base CPI ' + (baseCpi / 100).toFixed(2));
+
+    log('Oracle on-chain: round=' + roundId + ' fresh=' + isFresh + ' baseCPI=' + (baseCpi/100).toFixed(2), 'ok');
+  } catch(e) {
+    log('Oracle contract read: ' + e.message, 'err');
+  }
+}
+
+// ============================================================
+//  Read RWAFactory.cairo — all registered assets
+// ============================================================
+async function loadFactoryAssets() {
+  try {
+    const call = (ep, cd) => S.provider.callContract({
+      contractAddress: CFG.factoryAddr, entrypoint: ep, calldata: cd || []
+    }).then(r => r.result || r);
+
+    const countR = await call('get_rwa_count');
+    const count  = parseInt(countR[0], 16);
+
+    set('assetCount', count + ' asset' + (count !== 1 ? 's' : ''));
+    document.getElementById('t-count').textContent = count;
+    log('Factory: ' + count + ' assets', 'ok');
+
+    S.assets = [];
+    for (let id = 1; id <= count; id++) {
+      const [metaR, navR] = await Promise.all([
+        call('get_rwa_metadata', [id.toString()]),
+        call('get_rwa_nav',      [id.toString()]),
+      ]);
+      // RWAMetadata field order from interfaces.cairo:
+      // 0:asset_type 1:name 2:symbol 3:isin 4:issuer 5:maturity_ts
+      // 6:par_value 7:yield_bps 8:inflation_indexed 9:token_addr
+      // 10:vault_addr 11:creator 12:created_at 13:cap_low 14:cap_high 15:is_active
+      S.assets.push({
+        id,
+        asset_type:        parseInt(metaR[0], 16),
+        name:              f252(metaR[1]),
+        symbol:            f252(metaR[2]),
+        isin:              f252(metaR[3]),
+        maturity_ts:       parseInt(metaR[5], 16),
+        par_value:         parseInt(metaR[6], 16),
+        yield_bps:         parseInt(metaR[7], 16),
+        inflation_indexed: parseInt(metaR[8], 16) !== 0,
+        token_address:     metaR[9],
+        vault_address:     metaR[10],
+        created_at:        parseInt(metaR[12], 16),
+        is_active:         parseInt(metaR[15], 16) !== 0,
+        nav:               parseInt(navR[0], 16),
+      });
+      log('Asset ' + id + ': ' + f252(metaR[2]) + ' NAV $' + (parseInt(navR[0], 16) / 100).toFixed(2), 'ok');
+    }
+    renderAssetsTable(S.assets);
+  } catch(e) {
+    log('Factory load: ' + e.message, 'err');
+    showToast('Factory read failed: ' + e.message.slice(0,60), 'red');
+  }
+}
+
+// ============================================================
+//  Read RWAVault.cairo — vault stats + user position
+// ============================================================
+async function loadVaultPosition(vaultAddr) {
+  if (!S.provider || !vaultAddr) return;
+  try {
+    const call = (ep, cd) => S.provider.callContract({
+      contractAddress: vaultAddr, entrypoint: ep, calldata: cd || []
+    }).then(r => r.result || r);
+
+    const [navR, tvlR, depR] = await Promise.all([
+      call('get_nav_per_token'),
+      call('get_total_value_locked'),
+      call('get_deposit_count'),
+    ]);
+
+    S.userPosition = {
+      nav:      parseInt(navR[0], 16),
+      tvl:      parseInt(tvlR[0], 16),
+      depCount: parseInt(depR[0], 16),
+      pendingYield: 0, inflPnl: 0, token_balance: 0n, deposit_usd: 0n, deposit_cpi_at_entry: 0,
+    };
+
+    if (S.address) {
+      const [posR, yieldR, pnlR] = await Promise.all([
+        call('get_user_position',  [S.address]),
+        call('get_pending_yield',  [S.address]),
+        call('get_inflation_pnl',  [S.address]),
+      ]);
+      // VaultPosition: token_balance(u256 = 2 felts), deposit_usd_value(u256 = 2 felts),
+      // deposit_cpi_at_entry, yield_debt, last_updated, total_yield_claimed
+      S.userPosition.token_balance        = BigInt(posR[0]) | (BigInt(posR[1]) << 128n);
+      S.userPosition.deposit_usd          = BigInt(posR[2]) | (BigInt(posR[3]) << 128n);
+      S.userPosition.deposit_cpi_at_entry = parseInt(posR[4], 16);
+      S.userPosition.total_yield_claimed  = parseInt(posR[7], 16);
+      S.userPosition.pendingYield         = parseInt(yieldR[0], 16);
+
+      // i128: if above 2^127 it's negative
+      const pnlRaw = BigInt(pnlR[0]);
+      S.userPosition.inflPnl = pnlRaw > 2n**127n ? Number(pnlRaw - 2n**128n) : Number(pnlRaw);
+
+      log('Position: ' + (Number(S.userPosition.token_balance)/1e18).toFixed(6) + ' tokens | yield $' +
+        (S.userPosition.pendingYield/100).toFixed(4), 'ok');
+    }
+
+    renderPositionPanel(S.selectedAsset, S.userPosition);
+  } catch(e) {
+    log('Vault read: ' + e.message, 'err');
+  }
+}
+
+// ============================================================
+//  Read RWAToken.cairo
+// ============================================================
+async function loadTokenState(tokenAddr) {
+  if (!S.provider || !tokenAddr) return null;
+  try {
+    const call = (ep, cd) => S.provider.callContract({
+      contractAddress: tokenAddr, entrypoint: ep, calldata: cd || []
+    }).then(r => r.result || r);
+
+    const reads = [call('is_matured'), call('get_inflation_adjustment_factor')];
+    if (S.address) {
+      reads.push(call('is_kyc_approved', [S.address]));
+      reads.push(call('balance_of',      [S.address]));
+    }
+    const results = await Promise.all(reads);
+    return {
+      isMatured:   parseInt(results[0][0], 16) !== 0,
+      inflFactor:  parseInt(results[1][0], 16),
+      kycApproved: results[2] ? parseInt(results[2][0], 16) !== 0 : null,
+      balance:     results[3] ? (BigInt(results[3][0]) | (BigInt(results[3][1]||'0x0') << 128n)) : null,
+    };
+  } catch(e) { log('Token read: ' + e.message, 'err'); return null; }
+}
+
+// ============================================================
+//  Wallet — Argent X / Braavos
+// ============================================================
+async function connectWallet() {
+  const injected = window.starknet_argentX || window.starknet_braavos || window.starknet;
+  if (!injected) { showToast('Install Argent X or Braavos', 'red'); return; }
+  try {
+    await injected.enable({ starknetVersion: 'v5' });
+    S.address = injected.selectedAddress;
+    S.account = injected.account;
+    if (injected.provider) S.provider = injected.provider;
+
+    const short = S.address.slice(0,8) + '...' + S.address.slice(-6);
+    set('walletText', short);
+    document.getElementById('walletPill').style.borderColor = 'var(--green)';
+    document.getElementById('walletPill').style.color = 'var(--green)';
+    log('Wallet: ' + S.address, 'ok');
+    showToast('Wallet connected', 'green');
+    if (S.selectedVault) loadVaultPosition(S.selectedVault);
+  } catch(e) { log('Wallet: ' + e.message, 'err'); showToast('Connect failed', 'red'); }
+}
+
+// ============================================================
+//  RWAFactory.create_rwa()
+// ============================================================
+async function createRWA() {
+  if (!S.account)       { showToast('Connect wallet first', 'red'); return; }
+  if (!CFG.factoryAddr) { showToast('Factory address not set — open ⚙ Settings', 'red'); return; }
+
+  const name    = document.getElementById('f-name').value.trim();
+  const symbol  = document.getElementById('f-symbol').value.trim();
+  const isin    = document.getElementById('f-isin').value.trim();
+  const type    = parseInt(document.getElementById('f-type').value);
+  const par     = parseFloat(document.getElementById('f-par').value);
+  const yldBps  = parseInt(document.getElementById('f-yield').value);
+  const matDate = document.getElementById('f-maturity').value;
+  const indexed = document.getElementById('f-indexed').checked;
+
+  if (!name || !symbol)           { showToast('Name and Symbol required', 'red'); return; }
+  if (!par || par <= 0)           { showToast('Par value must be > 0', 'red'); return; }
+  if (yldBps < 0 || yldBps > 5000){ showToast('Yield must be 0–5000 bps', 'red'); return; }
+
+  const matTs    = matDate ? Math.floor(new Date(matDate).getTime()/1000) : 0;
+  const parCents = Math.round(par * 100);
+  const toFelt   = s => s ? '0x' + [...s].map(c => c.charCodeAt(0).toString(16).padStart(2,'0')).join('') : '0x0';
+
+  const btn = document.getElementById('createBtn');
+  btn.disabled = true; btn.textContent = 'DEPLOYING...';
+
+  log('create_rwa(' + symbol + ' type=' + type + ' par=$' + par + ' yield=' + yldBps + 'bps indexed=' + indexed + ')', 'info');
+
+  try {
+    const result = await S.account.execute({
+      contractAddress: CFG.factoryAddr,
+      entrypoint: 'create_rwa',
+      calldata: [
+        type.toString(), toFelt(name), toFelt(symbol),
+        isin ? toFelt(isin) : '0x0', toFelt('PERMISSIONED'),
+        matTs.toString(), parCents.toString(), yldBps.toString(),
+        indexed ? '1' : '0',
+        '0xffffffffffffffffffffffffffffffff', '0x0',
+      ],
+    });
+
+    log('TX: ' + result.transaction_hash, 'ok');
+    showToast('TX submitted: ' + result.transaction_hash.slice(0,16) + '...', 'green');
+    await S.provider.waitForTransaction(result.transaction_hash);
+    log(symbol + ' deployed ✓', 'ok');
+    showToast(symbol + ' deployed ✓', 'green');
+    loadFactoryAssets();
+  } catch(e) {
+    log('create_rwa: ' + e.message, 'err');
+    showToast('Deploy failed: ' + e.message.slice(0,60), 'red');
+  } finally {
+    btn.disabled = false; btn.textContent = 'DEPLOY RWA TOKEN + VAULT';
+  }
+}
+
+// ============================================================
+//  RWAVault.deposit()
+// ============================================================
+async function depositToVault() {
+  if (!S.account)       { showToast('Connect wallet', 'red'); return; }
+  if (!S.selectedVault) { showToast('Select an asset', 'red'); return; }
+  const amt = parseFloat(document.getElementById('f-amount').value);
+  if (!amt || amt <= 0) { showToast('Enter USDC amount', 'red'); return; }
+
+  const micro = BigInt(Math.round(amt * 1e6));
+  const low   = (micro & BigInt('0xffffffffffffffffffffffffffffffff')).toString();
+  const high  = (micro >> 128n).toString();
+
+  log('deposit(' + amt + ' USDC) vault=' + S.selectedVault, 'info');
+  try {
+    const r = await S.account.execute({ contractAddress: S.selectedVault, entrypoint: 'deposit', calldata: [low, high] });
+    log('TX: ' + r.transaction_hash, 'ok');
+    await S.provider.waitForTransaction(r.transaction_hash);
+    showToast('Deposited $' + amt + ' ✓', 'green');
+    loadVaultPosition(S.selectedVault);
+  } catch(e) { log('deposit: ' + e.message, 'err'); showToast('Deposit failed: ' + e.message.slice(0,50), 'red'); }
+}
+
+// ============================================================
+//  RWAVault.redeem()
+// ============================================================
+async function redeemFromVault() {
+  if (!S.account)       { showToast('Connect wallet', 'red'); return; }
+  if (!S.selectedVault) { showToast('Select an asset', 'red'); return; }
+  const amt = parseFloat(document.getElementById('f-amount').value);
+  if (!amt || amt <= 0) { showToast('Enter token amount', 'red'); return; }
+
+  const wei  = BigInt(Math.round(amt * 1e18));
+  const low  = (wei & BigInt('0xffffffffffffffffffffffffffffffff')).toString();
+  const high = (wei >> 128n).toString();
+
+  log('redeem(' + amt + ' tokens) vault=' + S.selectedVault, 'info');
+  try {
+    const r = await S.account.execute({ contractAddress: S.selectedVault, entrypoint: 'redeem', calldata: [low, high] });
+    log('TX: ' + r.transaction_hash, 'ok');
+    await S.provider.waitForTransaction(r.transaction_hash);
+    showToast('Redeemed ✓', 'green');
+    loadVaultPosition(S.selectedVault);
+  } catch(e) { log('redeem: ' + e.message, 'err'); showToast('Redeem failed', 'red'); }
+}
+
+// ============================================================
+//  RWAVault.claim_yield()
+// ============================================================
+async function claimYield() {
+  if (!S.account || !S.selectedVault) { showToast('Connect wallet and select asset', 'red'); return; }
+  log('claim_yield() vault=' + S.selectedVault, 'info');
+  try {
+    const r = await S.account.execute({ contractAddress: S.selectedVault, entrypoint: 'claim_yield', calldata: [] });
+    log('TX: ' + r.transaction_hash, 'ok');
+    await S.provider.waitForTransaction(r.transaction_hash);
+    showToast('Yield claimed ✓', 'green');
+    loadVaultPosition(S.selectedVault);
+  } catch(e) { log('claim_yield: ' + e.message, 'err'); showToast('Claim failed', 'red'); }
+}
+
+// ============================================================
+//  RWAVault.compound_yield()
+// ============================================================
+async function compoundYield() {
+  if (!S.account || !S.selectedVault) { showToast('Connect wallet and select asset', 'red'); return; }
+  log('compound_yield() vault=' + S.selectedVault, 'info');
+  try {
+    const r = await S.account.execute({ contractAddress: S.selectedVault, entrypoint: 'compound_yield', calldata: [] });
+    await S.provider.waitForTransaction(r.transaction_hash);
+    showToast('Yield compounded ✓', 'green');
+    loadVaultPosition(S.selectedVault);
+  } catch(e) { log('compound: ' + e.message, 'err'); showToast('Compound failed', 'red'); }
+}
+
+// ============================================================
+//  Asset selection — reads token + vault contracts
+// ============================================================
+async function selectAsset(id) {
+  S.selectedAsset = S.assets.find(a => a.id === id);
+  if (!S.selectedAsset) return;
+  S.selectedVault = S.selectedAsset.vault_address;
+
+  document.querySelectorAll('.rwa-table tr').forEach(r => r.classList.remove('selected'));
+  document.getElementById('row-' + id)?.classList.add('selected');
+  document.getElementById('positionPanel').style.display = 'block';
+
+  log('Selected: ' + S.selectedAsset.symbol +
+    ' | token=' + (S.selectedAsset.token_address||'').slice(0,12) + '...' +
+    ' | vault=' + (S.selectedAsset.vault_address||'').slice(0,12) + '...', 'info');
+
+  const [tokState] = await Promise.all([
+    loadTokenState(S.selectedAsset.token_address),
+    loadVaultPosition(S.selectedAsset.vault_address),
+  ]);
+
+  renderPositionPanel(S.selectedAsset, S.userPosition, tokState);
+}
+
+// ============================================================
+//  Render functions
+// ============================================================
+function renderOracleCards(d) {
+  set('cpiVal', d.cpi.toFixed(2));
+  set('cpiSub',
+    'YoY: <span style="color:var(--' + (d.yoy_pct > 4 ? 'red' : d.yoy_pct > 2.5 ? 'amber' : 'green') + ')">' +
+    (d.yoy_pct >= 0 ? '+' : '') + d.yoy_pct.toFixed(2) + '%</span>' +
+    ' &nbsp;·&nbsp; BLS ' + d.cpi_period);
+  set('ffVal',       d.fed_funds_pct.toFixed(2) + '<span class="oc-unit">%</span>');
+  set('ffSub',       'FEDFUNDS · ' + d.ff_date);
+  set('tbill3mVal',  d.tbill_3m_pct.toFixed(2)  + '<span class="oc-unit">%</span>');
+  set('tbill3mSub',  'TB3MS · ' + d.t3m_date);
+  set('tbill10yVal', d.tbill_10y_pct.toFixed(2) + '<span class="oc-unit">%</span>');
+  set('tbill10ySub', 'DGS10 · ' + d.t10y_date);
+  set('freshnessVal','<span style="color:var(--green)">LIVE</span>');
+  set('freshnessSub','Fetched ' + new Date(d.fetched_at).toLocaleTimeString());
+
+  ['card-cpi','card-ff','card-3m','card-10y','card-fresh'].forEach(id => {
+    const el = document.getElementById(id);
+    if (!el) return;
+    el.classList.add('flash');
+    setTimeout(() => el.classList.remove('flash'), 1000);
+  });
+}
+
+function renderSparkline(hist) {
+  const el = document.getElementById('sparkline');
+  if (!hist?.length) return;
+  const mx = Math.max(...hist), mn = Math.min(...hist), rng = mx - mn || 1;
+  el.innerHTML = hist.map((v, i) => {
+    const pct = ((v - mn) / rng) * 85 + 15;
+    return '<div class="spark-bar" data-val="' + v.toFixed(2) + '" style="height:' + pct + '%;' +
+      (i === hist.length - 1 ? 'background:var(--amber)' : '') + '"></div>';
+  }).join('');
+}
+
+function updateTicker(d) {
+  ['t-cpi','t-cpi2'].forEach(id  => { const e=document.getElementById(id); if(e) e.textContent=d.cpi.toFixed(2); });
+  ['t-ff','t-ff2'].forEach(id    => { const e=document.getElementById(id); if(e) e.textContent=d.fed_funds_pct.toFixed(2)+'%'; });
+  ['t-3m','t-3m2'].forEach(id    => { const e=document.getElementById(id); if(e) e.textContent=d.tbill_3m_pct.toFixed(2)+'%'; });
+  ['t-10y','t-10y2'].forEach(id  => { const e=document.getElementById(id); if(e) e.textContent=d.tbill_10y_pct.toFixed(2)+'%'; });
+  const tf = document.getElementById('t-fresh'); if(tf) tf.textContent = 'LIVE';
+}
+
+const TNAMES = ['T-Bill','Real Estate','Commodity','Corp Bond','TIPS'];
+const TCLASS = ['type-tbill','type-re','type-commodity','type-corp','type-tips'];
+
+function renderAssetsTable(assets) {
+  const tbody = document.getElementById('rwaTableBody');
+  if (!assets.length) {
+    tbody.innerHTML = '<tr><td colspan="9" style="color:var(--muted);text-align:center;padding:32px;font-family:var(--mono);font-size:11px">No assets registered in factory contract.</td></tr>';
+    return;
+  }
+  tbody.innerHTML = assets.map(a => {
+    const matured = a.maturity_ts > 0 && a.maturity_ts < Date.now()/1000;
+    const mat = a.maturity_ts > 0 ? new Date(a.maturity_ts*1000).toLocaleDateString('en-US',{year:'2-digit',month:'short'}) : 'Perpetual';
+    return '<tr onclick="selectAsset(' + a.id + ')" id="row-' + a.id + '">' +
+      '<td style="color:var(--muted)">' + a.id + '</td>' +
+      '<td style="color:var(--amber);font-weight:700">' + (a.symbol||'—') + '</td>' +
+      '<td><span class="type-badge ' + (TCLASS[a.asset_type]||'') + '">' + (TNAMES[a.asset_type]||'?') + '</span></td>' +
+      '<td class="addr">' + (a.isin||'—') + '</td>' +
+      '<td class="yield-val">' + (a.yield_bps/100).toFixed(2) + '%</td>' +
+      '<td class="nav-val">$' + (a.nav/100).toFixed(2) + '</td>' +
+      '<td>' + (a.inflation_indexed ? '<span class="indexed-icon">✦ CPI</span>' : '<span style="color:var(--muted);font-size:10px">—</span>') + '</td>' +
+      '<td style="' + (matured ? 'color:var(--red)' : 'color:var(--text-dim)') + ';font-size:11px">' + mat + '</td>' +
+      '<td><button class="action-btn" onclick="event.stopPropagation();selectAsset(' + a.id + ')">SELECT</button></td>' +
+    '</tr>';
+  }).join('');
+}
+
+function renderPositionPanel(asset, pos, tok) {
+  if (!asset) return;
+  set('positionTitle', (asset.symbol || 'ASSET ' + asset.id) + ' — VAULT POSITION');
+
+  const nav      = '$' + ((pos?.nav || asset.nav) / 100).toFixed(2);
+  const tvl      = pos?.tvl      ? '$' + (pos.tvl/100).toLocaleString() : '—';
+  const depCount = pos?.depCount !== undefined ? String(pos.depCount)   : '—';
+  const bal      = pos?.token_balance ? (Number(pos.token_balance)/1e18).toFixed(6) : '—';
+  const dep      = pos?.deposit_usd   ? '$' + (Number(pos.deposit_usd)/100).toFixed(2) : '—';
+  const entryCPI = pos?.deposit_cpi_at_entry ? (pos.deposit_cpi_at_entry/100).toFixed(2) : '—';
+  const yPend    = pos?.pendingYield
+    ? '<span style="color:var(--green)">$' + (pos.pendingYield/100).toFixed(4) + '</span>' : '—';
+  const yClaimed = pos?.total_yield_claimed ? '$' + (pos.total_yield_claimed/100).toFixed(4) : '—';
+  const inflPnl  = pos?.inflPnl !== undefined
+    ? (pos.inflPnl >= 0
+        ? '<span style="color:var(--green)">+$' + Math.abs(pos.inflPnl/100).toFixed(2) + '</span>'
+        : '<span style="color:var(--red)">−$'   + Math.abs(pos.inflPnl/100).toFixed(2) + '</span>')
+    : '—';
+  const inflFact = tok?.inflFactor ? (tok.inflFactor/1e8).toFixed(6) + 'x' : '—';
+  const matured  = tok?.isMatured !== undefined
+    ? (tok.isMatured ? '<span style="color:var(--red)">MATURED</span>' : '<span style="color:var(--green)">ACTIVE</span>') : '—';
+  const kyc = tok?.kycApproved !== null && tok?.kycApproved !== undefined
+    ? (tok.kycApproved ? '<span style="color:var(--green)">APPROVED</span>' : '<span style="color:var(--red)">NOT APPROVED</span>')
+    : '<span style="color:var(--muted)">Connect wallet</span>';
+
+  set('positionRows', [
+    ['NAV / Token',           nav],
+    ['Total Value Locked',    tvl],
+    ['Total Deposits',        depCount],
+    ['Annual Yield',          '<span style="color:var(--green)">' + (asset.yield_bps/100).toFixed(2) + '%</span>'],
+    ['Inflation Indexed',     asset.inflation_indexed ? '<span style="color:var(--green)">YES — CPI Linked</span>' : '<span style="color:var(--muted)">NO</span>'],
+    ['Inflation Factor',      inflFact],
+    ['Token Status',          matured],
+    ['KYC Status',            kyc],
+    ['Your Token Balance',    bal],
+    ['Your Deposit Value',    dep],
+    ['CPI at Entry',          entryCPI],
+    ['Pending Yield',         yPend],
+    ['Total Yield Claimed',   yClaimed],
+    ['Inflation P&L',         inflPnl],
+    ['Vault',  '<span class="addr" style="font-size:9px">' + (asset.vault_address||'—').slice(0,14) + '...</span>'],
+    ['Token',  '<span class="addr" style="font-size:9px">' + (asset.token_address||'—').slice(0,14) + '...</span>'],
+  ].map(([k,v]) => '<div class="position-row"><span class="position-key">' + k + '</span><span class="position-val">' + v + '</span></div>').join(''));
+}
+
+function addHistoryRow(d) {
+  const body = document.getElementById('historyBody');
+  if (!body || !d) return;
+  const row = document.createElement('div');
+  row.className = 'history-row new-row';
+  const yoyColor = d.yoy_pct > 4 ? 'red' : d.yoy_pct > 2.5 ? 'amber' : 'green';
+  row.innerHTML =
+    '<div style="color:var(--amber)">' + (document.getElementById('roundBadge')?.textContent || 'BLS') + '</div>' +
+    '<div style="color:var(--text-dim)">' + new Date(d.fetched_at).toLocaleDateString() + '</div>' +
+    '<div>' + d.cpi.toFixed(2) + '</div>' +
+    '<div style="color:var(--' + yoyColor + ')">' + (d.yoy_pct >= 0 ? '+' : '') + d.yoy_pct.toFixed(2) + '%</div>' +
+    '<div>' + d.tbill_3m_pct.toFixed(2) + '%</div>' +
+    '<div>' + d.tbill_10y_pct.toFixed(2) + '%</div>' +
+    '<div style="color:var(--text-dim);font-size:10px">BLS + FRED</div>';
+  body.insertBefore(row, body.firstChild);
+  while (body.children.length > 20) body.removeChild(body.lastChild);
+}
+
+// ============================================================
+//  Settings modal — RPC URL + deployed contract addresses
+// ============================================================
+function openSettings() {
+  document.getElementById('settingsOverlay')?.remove();
+  document.body.insertAdjacentHTML('beforeend',
+    '<div id="settingsOverlay" onclick="if(event.target===this)closeSettings()" style="position:fixed;inset:0;background:rgba(0,0,0,0.88);z-index:500;display:flex;align-items:center;justify-content:center">' +
+    '<div style="background:var(--surface);border:1px solid var(--amber-dim);padding:28px;width:520px;max-width:95vw">' +
+    '<div style="font-family:var(--mono);font-size:11px;text-transform:uppercase;letter-spacing:.1em;color:var(--amber);margin-bottom:20px;border-bottom:1px solid var(--border);padding-bottom:12px">⚙ Configuration</div>' +
+    '<div class="field"><label>Starknet RPC URL</label>' +
+    '<input id="s-rpc" value="' + CFG.rpcUrl + '"/></div>' +
+    '<div class="field"><label>InflationOracle Contract Address (0x...)</label>' +
+    '<input id="s-oracle" value="' + CFG.oracleAddr + '" placeholder="deploy contracts first"/></div>' +
+    '<div class="field"><label>RWAFactory Contract Address (0x...)</label>' +
+    '<input id="s-factory" value="' + CFG.factoryAddr + '" placeholder="deploy contracts first"/></div>' +
+    '<div style="background:rgba(245,166,35,0.06);border:1px solid var(--amber-dim);padding:12px;margin-bottom:16px;font-family:var(--mono);font-size:10px;color:var(--text-dim);line-height:1.6">' +
+    'API keys (BLS + FRED) are set in <strong style="color:var(--amber)">server/.env</strong><br>' +
+    'Copy server/.env.example → server/.env, add your keys, restart the server.' +
+    '</div>' +
+    '<div style="display:flex;gap:10px">' +
+    '<button class="btn-primary" onclick="saveSettings()" style="flex:1">SAVE</button>' +
+    '<button class="btn-secondary" onclick="closeSettings()">CANCEL</button>' +
+    '</div></div></div>');
+}
+
+function closeSettings() { document.getElementById('settingsOverlay')?.remove(); }
+
+function saveSettings() {
+  CFG.rpcUrl     = document.getElementById('s-rpc').value.trim();
+  CFG.oracleAddr = document.getElementById('s-oracle').value.trim();
+  CFG.factoryAddr= document.getElementById('s-factory').value.trim();
+  closeSettings();
+  const sn = window.starknet || window.starknetModule;
+  if (sn?.RpcProvider) S.provider = new sn.RpcProvider({ nodeUrl: CFG.rpcUrl });
+  log('Settings saved. RPC: ' + CFG.rpcUrl, 'ok');
+  fetchMacroData();
+  if (CFG.factoryAddr && S.provider) loadFactoryAssets();
+}
+
+// ============================================================
+//  Utilities
+// ============================================================
+function set(id, html) { const e = document.getElementById(id); if (e) e.innerHTML = html; }
+
+function log(msg, type='info') {
+  const el = document.getElementById('txLog'); if (!el) return;
+  const d = document.createElement('div'); d.className = 'tx-line';
+  const ts  = new Date().toLocaleTimeString();
+  const cls = type==='err'?'tag-err':type==='ok'?'tag-ok':'tag-inf';
+  const lbl = type==='err'?'ERR':type==='ok'?'OK':'INFO';
+  d.innerHTML = '<span class="ts">'+ts+'</span><span class="tag '+cls+'">'+lbl+'</span>'+msg;
+  el.insertBefore(d, el.firstChild);
+  while (el.children.length > 100) el.removeChild(el.lastChild);
+}
+
+function showToast(msg, type='') {
+  const t = document.getElementById('toast'); if (!t) return;
+  t.textContent = msg;
+  t.className = 'toast show' + (type==='green'?' green-toast':type==='red'?' red-toast':'');
+  clearTimeout(window._tt);
+  window._tt = setTimeout(() => t.classList.remove('show'), 4500);
+}
+
+function f252(hex) {
+  if (!hex || hex === '0x0') return '';
+  try {
+    const h = hex.replace('0x',''); let s = '';
+    for (let i = 0; i < h.length; i += 2) {
+      const c = parseInt(h.slice(i,i+2), 16);
+      if (c >= 32 && c < 127) s += String.fromCharCode(c);
+    }
+    return s || hex;
+  } catch { return hex; }
+}
+</script>
+</body>
+</html>
