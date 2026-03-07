@@ -1,1 +1,418 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+  <title>DeFi Shield — AI-Powered Insurance</title>
+  <script src="https://cdn.jsdelivr.net/npm/ethers@6.9.0/dist/ethers.umd.min.js"></script>
+  <style>
+    :root{--bg:#0a0e1a;--surface:#111827;--card:#1a2235;--border:#2a3650;--accent:#3b82f6;--accent2:#8b5cf6;--green:#10b981;--red:#ef4444;--yellow:#f59e0b;--text:#f1f5f9;--muted:#94a3b8}
+    *{box-sizing:border-box;margin:0;padding:0}
+    body{background:var(--bg);color:var(--text);font-family:system-ui,sans-serif;min-height:100vh}
+    nav{display:flex;align-items:center;justify-content:space-between;padding:16px 32px;border-bottom:1px solid var(--border);background:rgba(17,24,39,.95);position:sticky;top:0;z-index:100;backdrop-filter:blur(12px);flex-wrap:wrap;gap:12px}
+    .logo{display:flex;align-items:center;gap:10px;font-size:20px;font-weight:700}
+    .logo-icon{width:32px;height:32px;background:linear-gradient(135deg,var(--accent),var(--accent2));border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:16px}
+    .nav-tabs{display:flex;gap:4px;flex-wrap:wrap}
+    .nav-tab{padding:8px 14px;border-radius:8px;cursor:pointer;font-size:14px;color:var(--muted);border:none;background:none;transition:all .2s}
+    .nav-tab.active,.nav-tab:hover{background:var(--card);color:var(--text)}
+    .connect-btn{padding:10px 20px;border-radius:10px;border:none;background:var(--accent);color:#fff;font-weight:600;cursor:pointer;font-size:14px;transition:all .2s}
+    .connect-btn:hover{background:#2563eb}
+    .connect-btn.connected{background:var(--green)}
+    .container{max-width:1200px;margin:0 auto;padding:32px 24px}
+    .page{display:none}
+    .page.active{display:block}
+    .stats-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:20px;margin-bottom:32px}
+    .stat-card{background:var(--card);border:1px solid var(--border);border-radius:16px;padding:24px;position:relative;overflow:hidden}
+    .stat-card::before{content:'';position:absolute;top:0;left:0;right:0;height:3px;background:linear-gradient(90deg,var(--accent),var(--accent2))}
+    .stat-label{font-size:12px;color:var(--muted);margin-bottom:8px;text-transform:uppercase;letter-spacing:.5px}
+    .stat-value{font-size:26px;font-weight:700}
+    .stat-sub{font-size:12px;color:var(--muted);margin-top:4px}
+    .card{background:var(--card);border:1px solid var(--border);border-radius:16px;padding:24px;margin-bottom:24px}
+    .card-title{font-size:18px;font-weight:600;margin-bottom:20px}
+    .form-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:16px}
+    .form-group{display:flex;flex-direction:column;gap:8px}
+    label{font-size:13px;color:var(--muted);font-weight:500}
+    input,select,textarea{background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:12px 14px;color:var(--text);font-size:14px;outline:none;transition:border .2s;width:100%}
+    input:focus,select:focus,textarea:focus{border-color:var(--accent)}
+    select option{background:var(--surface)}
+    .btn{padding:12px 24px;border-radius:10px;border:none;font-weight:600;cursor:pointer;font-size:14px;transition:all .2s}
+    .btn-primary{background:var(--accent);color:#fff}
+    .btn-primary:hover{background:#2563eb}
+    .btn-primary:disabled{opacity:.5;cursor:not-allowed}
+    .btn-secondary{background:var(--surface);color:var(--text);border:1px solid var(--border)}
+    .btn-secondary:hover{border-color:var(--accent)}
+    table{width:100%;border-collapse:collapse}
+    th{text-align:left;font-size:11px;color:var(--muted);font-weight:600;text-transform:uppercase;letter-spacing:.5px;padding:12px 16px;border-bottom:1px solid var(--border)}
+    td{padding:14px 16px;border-bottom:1px solid rgba(42,54,80,.4);font-size:14px}
+    tr:last-child td{border-bottom:none}
+    tr:hover td{background:rgba(59,130,246,.04)}
+    .badge{padding:4px 10px;border-radius:20px;font-size:12px;font-weight:600;display:inline-block}
+    .badge-green{background:rgba(16,185,129,.15);color:var(--green)}
+    .badge-red{background:rgba(239,68,68,.15);color:var(--red)}
+    .badge-yellow{background:rgba(245,158,11,.15);color:var(--yellow)}
+    .badge-blue{background:rgba(59,130,246,.15);color:var(--accent)}
+    .risk-meter{height:8px;border-radius:4px;background:var(--border);overflow:hidden;margin:6px 0}
+    .risk-fill{height:100%;border-radius:4px;transition:width .5s}
+    .alert{padding:14px 18px;border-radius:10px;font-size:14px;margin-bottom:16px}
+    .alert-error{background:rgba(239,68,68,.1);border:1px solid rgba(239,68,68,.3);color:#fca5a5}
+    .alert-success{background:rgba(16,185,129,.1);border:1px solid rgba(16,185,129,.3);color:#6ee7b7}
+    .alert-info{background:rgba(59,130,246,.1);border:1px solid rgba(59,130,246,.3);color:#93c5fd}
+    .spinner{width:20px;height:20px;border:2px solid var(--border);border-top-color:var(--accent);border-radius:50%;animation:spin .8s linear infinite;display:inline-block}
+    @keyframes spin{to{transform:rotate(360deg)}}
+    .loading{display:flex;flex-direction:column;align-items:center;gap:16px;padding:48px;color:var(--muted)}
+    @media(max-width:768px){nav{padding:12px 16px}.container{padding:16px}}
+  </style>
+</head>
+<body>
+<nav>
+  <div class="logo"><div class="logo-icon">🛡</div>DeFi Shield</div>
+  <div class="nav-tabs">
+    <button class="nav-tab active" onclick="showPage('dashboard',this)">Dashboard</button>
+    <button class="nav-tab" onclick="showPage('policies',this)">My Policies</button>
+    <button class="nav-tab" onclick="showPage('create',this)">Get Insured</button>
+    <button class="nav-tab" onclick="showPage('claims',this)">Claims</button>
+    <button class="nav-tab" onclick="showPage('risk',this)">Risk Monitor</button>
+  </div>
+  <button class="connect-btn" id="connectBtn" onclick="connectWallet()">Connect Wallet</button>
+</nav>
 
+<div class="container">
+
+<!-- DASHBOARD -->
+<div class="page active" id="page-dashboard">
+  <h1 style="font-size:28px;font-weight:700;margin-bottom:8px">Protocol Overview</h1>
+  <p style="color:var(--muted);margin-bottom:28px">AI-powered DeFi insurance across Ethereum, Polygon &amp; Arbitrum via Chainlink CRE</p>
+  <div class="stats-grid">
+    <div class="stat-card"><div class="stat-label">Total Value Locked</div><div class="stat-value" id="statTvl">—</div><div class="stat-sub">USDC</div></div>
+    <div class="stat-card"><div class="stat-label">Active Policies</div><div class="stat-value" id="statPolicies">—</div><div class="stat-sub">Currently insured</div></div>
+    <div class="stat-card"><div class="stat-label">Premiums Collected</div><div class="stat-value" id="statPremiums">—</div><div class="stat-sub">Total USDC</div></div>
+    <div class="stat-card"><div class="stat-label">Claims Paid</div><div class="stat-value" id="statClaims">—</div><div class="stat-sub">Total USDC</div></div>
+  </div>
+  <div class="card"><div class="card-title">🤖 AI Risk Assessment</div><div id="riskPanel"><div class="loading"><div class="spinner"></div>Loading...</div></div></div>
+  <div class="card">
+    <div class="card-title">⚡ Chainlink Services</div>
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:16px">
+      <div style="padding:16px;background:var(--surface);border-radius:12px"><div style="font-size:12px;color:var(--muted);margin-bottom:6px">CCIP Cross-Chain</div><span class="badge badge-green">Active</span></div>
+      <div style="padding:16px;background:var(--surface);border-radius:12px"><div style="font-size:12px;color:var(--muted);margin-bottom:6px">Automation Upkeep</div><span class="badge badge-green">Registered</span></div>
+      <div style="padding:16px;background:var(--surface);border-radius:12px"><div style="font-size:12px;color:var(--muted);margin-bottom:6px">Functions Oracle</div><span class="badge badge-green">Subscribed</span></div>
+      <div style="padding:16px;background:var(--surface);border-radius:12px"><div style="font-size:12px;color:var(--muted);margin-bottom:6px">CRE Workflows</div><div id="workflowStatus"><span class="badge badge-yellow">Checking...</span></div></div>
+    </div>
+  </div>
+</div>
+
+<!-- MY POLICIES -->
+<div class="page" id="page-policies">
+  <h1 style="font-size:28px;font-weight:700;margin-bottom:24px">My Policies</h1>
+  <div id="policiesContent"><div class="alert alert-info">🔌 Connect your wallet to view your policies</div></div>
+</div>
+
+<!-- CREATE POLICY -->
+<div class="page" id="page-create">
+  <h1 style="font-size:28px;font-weight:700;margin-bottom:8px">Get Insured</h1>
+  <p style="color:var(--muted);margin-bottom:28px">Protect your DeFi positions with AI-powered coverage</p>
+  <div id="createAlert"></div>
+  <div class="card">
+    <div class="card-title">📋 Policy Details</div>
+    <div class="form-grid">
+      <div class="form-group"><label>Chain</label>
+        <select id="policyChain">
+          <option value="ethereum">Ethereum Mainnet</option>
+          <option value="polygon">Polygon</option>
+          <option value="arbitrum">Arbitrum One</option>
+          <option value="sepolia">Sepolia Testnet</option>
+        </select>
+      </div>
+      <div class="form-group"><label>Protocol</label>
+        <select id="policyProtocol">
+          <option value="uniswap-v3">Uniswap v3</option>
+          <option value="uniswap-v2">Uniswap v2</option>
+          <option value="aave-v3">Aave v3</option>
+          <option value="aave-v2">Aave v2</option>
+          <option value="compound-v3">Compound v3</option>
+          <option value="curve">Curve Finance</option>
+          <option value="balancer">Balancer</option>
+          <option value="gmx">GMX</option>
+        </select>
+      </div>
+      <div class="form-group"><label>Coverage Type</label>
+        <select id="coverageType">
+          <option value="IL">Impermanent Loss</option>
+          <option value="EXPLOIT">Smart Contract Exploit</option>
+          <option value="VOLATILITY">Liquidation / Volatility</option>
+          <option value="FULL">Full Coverage</option>
+        </select>
+      </div>
+      <div class="form-group"><label>Position Address</label><input type="text" id="positionAddress" placeholder="0x... LP token or position"/></div>
+      <div class="form-group"><label>Coverage Amount (USDC)</label><input type="number" id="insuredAmount" placeholder="10000" min="100"/></div>
+      <div class="form-group"><label>Premium (USDC)</label><input type="number" id="premiumAmount" placeholder="auto-calculated" min="1"/></div>
+      <div class="form-group"><label>Duration</label>
+        <select id="duration">
+          <option value="30">30 days</option>
+          <option value="60">60 days</option>
+          <option value="90" selected>90 days</option>
+          <option value="180">180 days</option>
+          <option value="365">1 year</option>
+        </select>
+      </div>
+    </div>
+    <div style="margin-top:20px;padding:14px;background:var(--surface);border-radius:10px;font-size:13px;color:var(--muted)">
+      ℹ️ USDC approval required before creating a policy. Premium is transferred immediately.
+    </div>
+    <div style="margin-top:20px;display:flex;gap:12px;flex-wrap:wrap">
+      <button class="btn btn-secondary" onclick="estimatePremium()">Estimate Premium</button>
+      <button class="btn btn-primary" id="createPolicyBtn" onclick="createPolicy()" disabled>Create Policy</button>
+    </div>
+  </div>
+</div>
+
+<!-- CLAIMS -->
+<div class="page" id="page-claims">
+  <h1 style="font-size:28px;font-weight:700;margin-bottom:8px">Submit a Claim</h1>
+  <p style="color:var(--muted);margin-bottom:28px">AI-verified claims are processed and paid automatically by the CRE workflow</p>
+  <div id="claimAlert"></div>
+  <div class="card">
+    <div class="card-title">📝 Claim Details</div>
+    <div class="form-grid">
+      <div class="form-group"><label>Policy ID</label><input type="number" id="claimPolicyId" placeholder="1" min="1"/></div>
+      <div class="form-group"><label>Claim Amount (USDC)</label><input type="number" id="claimAmount" placeholder="Amount" min="1"/></div>
+      <div class="form-group" style="grid-column:1/-1">
+        <label>Reason</label>
+        <textarea id="claimReason" rows="3" placeholder="e.g. Impermanent loss of 18% on Uniswap v3 ETH/USDC pool over 30 days"></textarea>
+      </div>
+    </div>
+    <div style="margin-top:20px"><button class="btn btn-primary" id="submitClaimBtn" onclick="submitClaim()" disabled>Sign &amp; Submit Claim</button></div>
+  </div>
+  <div class="card">
+    <div class="card-title">🔍 Check Claim Status</div>
+    <div style="display:flex;gap:12px;align-items:flex-end;flex-wrap:wrap">
+      <div class="form-group" style="flex:1;min-width:180px"><label>Claim ID</label><input type="number" id="statusClaimId" placeholder="Claim ID"/></div>
+      <button class="btn btn-secondary" onclick="checkClaimStatus()">Check</button>
+    </div>
+    <div id="claimStatusResult" style="margin-top:16px"></div>
+  </div>
+</div>
+
+<!-- RISK MONITOR -->
+<div class="page" id="page-risk">
+  <h1 style="font-size:28px;font-weight:700;margin-bottom:8px">Risk Monitor</h1>
+  <p style="color:var(--muted);margin-bottom:28px">Live composite risk score updated every 10 min by Chainlink CRE</p>
+  <div id="riskMonitorContent"><div class="loading"><div class="spinner"></div>Loading...</div></div>
+</div>
+
+</div><!-- /container -->
+
+<script>
+const API = window.location.hostname==='localhost'?'http://localhost:3001':'https://your-backend.render.com';
+const VAULT_ABI=["function createPolicy(string,string,address,uint256,uint256,uint256,string) returns (uint256)","function submitClaim(uint256,uint256,string,bytes32) returns (uint256)","function getUserPolicies(address) view returns (uint256[])","function policies(uint256) view returns (uint256,address,string,string,address,uint256,uint256,uint256,uint256,string,bool,bool)","function nextPolicyId() view returns (uint256)","function totalValueLocked() view returns (uint256)","function totalPremiumsCollected() view returns (uint256)","function totalClaimsPaid() view returns (uint256)","function claims(uint256) view returns (uint256,uint256,address,uint256,uint256,string,bytes32,uint256,uint256,uint8,address)"];
+const USDC_ABI=["function approve(address,uint256) returns (bool)","function allowance(address,address) view returns (uint256)","function balanceOf(address) view returns (uint256)"];
+let provider,signer,account,vault,usdc;
+
+async function connectWallet(){
+  if(!window.ethereum){alert('MetaMask required');return;}
+  try{
+    provider=new ethers.BrowserProvider(window.ethereum);
+    [account]=(await provider.send('eth_requestAccounts',[]));
+    signer=await provider.getSigner();
+    const r=await apiGet('/api/v1/contracts');
+    if(r.data?.insuranceVault) vault=new ethers.Contract(r.data.insuranceVault,VAULT_ABI,signer);
+    if(r.data?.usdc)           usdc =new ethers.Contract(r.data.usdc,USDC_ABI,signer);
+    const b=document.getElementById('connectBtn');
+    b.textContent=account.slice(0,6)+'…'+account.slice(-4);b.classList.add('connected');
+    document.getElementById('createPolicyBtn').disabled=false;
+    document.getElementById('submitClaimBtn').disabled=false;
+    loadUserPolicies();
+  }catch(e){showAlert('createAlert','error',e.message);}
+}
+
+async function apiGet(p){const r=await fetch(API+p);if(!r.ok)throw new Error('HTTP '+r.status);return r.json();}
+async function apiPost(p,b){const r=await fetch(API+p,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(b)});const j=await r.json();if(!r.ok)throw new Error(j.error||'HTTP '+r.status);return j;}
+
+async function loadStats(){
+  try{
+    const d=(await apiGet('/api/v1/stats')).data;
+    document.getElementById('statTvl').textContent='$'+fmt(d.tvl??0);
+    document.getElementById('statPolicies').textContent=d.activePolicies??d.totalPolicies??0;
+    document.getElementById('statPremiums').textContent='$'+fmt(d.premiums??0);
+    document.getElementById('statClaims').textContent='$'+fmt(d.claimsPaid??0);
+  }catch{}
+  loadRiskPanel();loadWorkflowStatus();
+}
+
+async function loadRiskPanel(){
+  const el=document.getElementById('riskPanel');
+  try{
+    const d=(await apiGet('/api/v1/risk/current')).data;
+    const s=Math.round(d?.overallScore??d?.riskScore??50);
+    const c=s>=75?'var(--red)':s>=50?'var(--yellow)':'var(--green)';
+    const lbl=s>=75?'HIGH RISK':s>=50?'MEDIUM RISK':'LOW RISK';
+    const comp=d?.components??{};
+    el.innerHTML=`<div style="display:flex;align-items:center;gap:24px;flex-wrap:wrap">
+      <div style="text-align:center;min-width:110px"><div style="font-size:52px;font-weight:800;color:${c}">${s}</div><div style="font-size:12px;color:${c};font-weight:700;letter-spacing:1px">${lbl}</div></div>
+      <div style="flex:1;min-width:200px">${Object.entries(comp).map(([k,v])=>{const mx={marketVolatility:25,tvlDecline:25,liquidationRisk:20,correlationRisk:15,concentrationRisk:15}[k]??25;const nm=k.replace(/([A-Z])/g,' $1').replace(/^./,s=>s.toUpperCase());const pct=Math.min((v/mx)*100,100);const fc=pct>70?'var(--red)':pct>40?'var(--yellow)':'var(--green)';return`<div style="margin-bottom:10px"><div style="display:flex;justify-content:space-between;font-size:13px;margin-bottom:3px"><span style="color:var(--muted)">${nm}</span><span style="font-weight:600">${v}/${mx}</span></div><div class="risk-meter"><div class="risk-fill" style="width:${pct}%;background:${fc}"></div></div></div>`;}).join('')}</div>
+    </div><div style="margin-top:12px;font-size:12px;color:var(--muted)">Updated ${new Date(d?.timestamp??Date.now()).toLocaleTimeString()}</div>`;
+  }catch{el.innerHTML='<div class="alert alert-info">⚡ Risk data unavailable — backend may be starting</div>';}
+}
+
+async function loadWorkflowStatus(){
+  try{
+    const d=(await apiGet('/api/v1/workflows')).data;
+    const ok=['orchestrator','claimProcessor','riskMonitor'].every(k=>d[k]?.status==='configured');
+    document.getElementById('workflowStatus').innerHTML=ok?'<span class="badge badge-green">All Active</span>':'<span class="badge badge-yellow">Needs Config</span>';
+  }catch{document.getElementById('workflowStatus').innerHTML='<span class="badge badge-red">Offline</span>';}
+}
+
+async function loadUserPolicies(){
+  if(!account){return;}
+  const el=document.getElementById('policiesContent');
+  el.innerHTML='<div class="loading"><div class="spinner"></div>Loading policies...</div>';
+  try{
+    const list=(await apiGet('/api/v1/policies/user/'+account)).data??[];
+    if(!list.length){el.innerHTML='<div class="alert alert-info">No policies found.</div><button class="btn btn-primary" onclick="showPage(\'create\',null)">Create Your First Policy →</button>';return;}
+    const sb=p=>p.active&&!p.claimed?'<span class="badge badge-green">Active</span>':p.claimed?'<span class="badge badge-yellow">Claimed</span>':'<span class="badge badge-red">Expired</span>';
+    el.innerHTML=`<div class="card"><div class="card-title">📋 Your Policies (${list.length})</div><div style="overflow-x:auto"><table><thead><tr><th>ID</th><th>Protocol</th><th>Chain</th><th>Type</th><th>Insured</th><th>Expires</th><th>Status</th><th></th></tr></thead><tbody>${list.map(p=>`<tr><td>#${p.policyId}</td><td><strong>${p.protocol}</strong></td><td>${p.chain}</td><td><span class="badge badge-blue">${p.coverageType}</span></td><td>$${fmt(p.insuredAmount)}</td><td>${new Date(Number(p.endTime)*1000).toLocaleDateString()}</td><td>${sb(p)}</td><td><button class="btn btn-secondary" style="padding:6px 12px;font-size:12px" onclick="prefillClaim(${p.policyId},'${p.insuredAmount}')">Claim</button></td></tr>`).join('')}</tbody></table></div></div>`;
+  }catch(e){el.innerHTML=`<div class="alert alert-error">Error: ${e.message}</div>`;}
+}
+
+function prefillClaim(id,amt){showPage('claims',null);document.getElementById('claimPolicyId').value=id;document.getElementById('claimAmount').value=amt;}
+
+function estimatePremium(){
+  const amt=parseFloat(document.getElementById('insuredAmount').value)||0;
+  const cov=document.getElementById('coverageType').value;
+  const days=parseInt(document.getElementById('duration').value)||90;
+  const rates={IL:.005,EXPLOIT:.01,VOLATILITY:.008,FULL:.015};
+  const est=amt*(rates[cov]||.01)*(days/30);
+  document.getElementById('premiumAmount').value=Math.ceil(est*100)/100;
+  showAlert('createAlert','info','Estimated premium: $'+est.toFixed(2)+' USDC');
+}
+
+async function createPolicy(){
+  if(!signer){showAlert('createAlert','error','Connect wallet first');return;}
+  const chain=document.getElementById('policyChain').value;
+  const proto=document.getElementById('policyProtocol').value;
+  const pos=document.getElementById('positionAddress').value.trim();
+  const amt=document.getElementById('insuredAmount').value;
+  const prem=document.getElementById('premiumAmount').value;
+  const dur=document.getElementById('duration').value;
+  const cov=document.getElementById('coverageType').value;
+  if(!pos||!amt||!prem){showAlert('createAlert','error','Fill all fields');return;}
+  if(!ethers.isAddress(pos)){showAlert('createAlert','error','Invalid position address');return;}
+  const btn=document.getElementById('createPolicyBtn');btn.disabled=true;btn.textContent='Processing...';
+  try{
+    const amtNum=parseFloat(amt),premNum=parseFloat(prem);
+    if(!amtNum||amtNum<=0||!premNum||premNum<=0){showAlert('createAlert','error','Amount and premium must be positive numbers');btn.disabled=false;btn.textContent='Create Policy';return;}
+    const ins=ethers.parseUnits(amtNum.toFixed(6),6);
+    const pr=ethers.parseUnits(premNum.toFixed(6),6);
+    if(usdc&&vault){
+      const va=await vault.getAddress();
+      const al=await usdc.allowance(account,va);
+      if(al<pr){showAlert('createAlert','info','Approving USDC...');await(await usdc.approve(va,ethers.MaxUint256)).wait();}
+    }
+    showAlert('createAlert','info','Creating policy on-chain...');
+    let txHash;
+    if(vault){
+      const tx=await vault.createPolicy(chain,proto,pos,ins,pr,BigInt(dur)*86400n,cov);
+      const rc=await tx.wait();txHash=rc.hash;
+    }else{
+      const r=await apiPost('/api/v1/policy/create',{chain,protocol:proto,position:pos,amount:amt,premium:prem,duration:dur,coverage:cov,userAddress:account});
+      txHash=r.txHash;
+    }
+    showAlert('createAlert','success','✅ Policy created! TX: '+txHash.slice(0,10)+'...');
+    loadUserPolicies();
+  }catch(e){showAlert('createAlert','error',e.reason||e.message||'Failed');}
+  finally{btn.disabled=false;btn.textContent='Create Policy';}
+}
+
+async function submitClaim(){
+  if(!signer){showAlert('claimAlert','error','Connect wallet first');return;}
+  const pid=document.getElementById('claimPolicyId').value;
+  const amt=document.getElementById('claimAmount').value;
+  const rsn=document.getElementById('claimReason').value.trim();
+  if(!pid||!amt||!rsn){showAlert('claimAlert','error','Fill all fields');return;}
+  if(isNaN(parseFloat(amt))||parseFloat(amt)<=0){showAlert('claimAlert','error','Invalid claim amount');return;}
+  if(isNaN(parseInt(pid))||parseInt(pid)<=0){showAlert('claimAlert','error','Invalid policy ID');return;}
+  const btn=document.getElementById('submitClaimBtn');btn.disabled=true;btn.textContent='Signing...';
+  try{
+    const net=await provider.getNetwork();
+    const cid=Number(net.chainId);
+    const nonce=Math.floor(Date.now()/1000);
+    const amtBig=ethers.parseUnits(parseFloat(amt).toFixed(6),6).toString();
+    const domain={name:'DeFiInsurance',version:'1',chainId:cid};
+    const types={Claim:[{name:'policyId',type:'uint256'},{name:'amount',type:'uint256'},{name:'reason',type:'string'},{name:'nonce',type:'uint256'}]};
+    const val={policyId:BigInt(pid),amount:BigInt(amtBig),reason:rsn,nonce:BigInt(nonce)};
+    const sig=await signer.signTypedData(domain,types,val);
+    btn.textContent='Submitting...';
+    const r=await apiPost('/api/v1/claims/submit',{policyId:Number(pid),claimant:account,amount:amtBig,reason:rsn,signature:sig,nonce});
+    showAlert('claimAlert','success','✅ Claim #'+r.claimId+' submitted! Processes in next 5-min cycle.');
+    document.getElementById('statusClaimId').value=r.claimId;
+  }catch(e){showAlert('claimAlert','error',e.message||'Failed');}
+  finally{btn.disabled=false;btn.textContent='Sign & Submit Claim';}
+}
+
+async function checkClaimStatus(){
+  const id=document.getElementById('statusClaimId').value;if(!id)return;
+  const el=document.getElementById('claimStatusResult');el.innerHTML='<div class="spinner"></div>';
+  try{
+    const c=(await apiGet('/api/v1/claims/'+id+'/status')).data;
+    const bc={Pending:'badge-yellow',UnderReview:'badge-blue',Approved:'badge-green',Rejected:'badge-red',Paid:'badge-green'}[c.status]??'badge-yellow';
+    el.innerHTML=`<div style="background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:20px">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:16px">
+        <div><div style="font-size:18px;font-weight:700">Claim #${c.claimId}</div><div style="color:var(--muted);font-size:13px">Policy #${c.policyId}</div></div>
+        <span class="badge ${bc}">${c.status}</span>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;font-size:13px">
+        <div><div style="color:var(--muted)">Requested</div><div style="font-weight:600">$${fmt(ethers.formatUnits(c.requestedAmount,6))}</div></div>
+        <div><div style="color:var(--muted)">Approved</div><div style="font-weight:600;color:var(--green)">$${fmt(ethers.formatUnits(c.approvedAmount,6))}</div></div>
+        <div style="grid-column:1/-1"><div style="color:var(--muted)">Reason</div><div>${c.reason}</div></div>
+        <div><div style="color:var(--muted)">Submitted</div><div>${new Date(c.submittedAt*1000).toLocaleString()}</div></div>
+        ${c.processedAt>0?`<div><div style="color:var(--muted)">Processed</div><div>${new Date(c.processedAt*1000).toLocaleString()}</div></div>`:''}
+      </div>
+    </div>`;
+  }catch(e){el.innerHTML=`<div class="alert alert-error">${e.message}</div>`;}
+}
+
+async function loadRiskMonitor(){
+  const el=document.getElementById('riskMonitorContent');
+  try{
+    const[cur,hist]=await Promise.all([apiGet('/api/v1/risk/current'),apiGet('/api/v1/risk/history').catch(()=>({data:[]}))]);
+    const d=cur.data;const h=hist.data??[];
+    const s=Math.round(d?.overallScore??d?.riskScore??0);
+    const c=s>=75?'var(--red)':s>=50?'var(--yellow)':'var(--green)';
+    const comp=d?.components??{};
+    const maxMap={marketVolatility:25,tvlDecline:25,liquidationRisk:20,correlationRisk:15,concentrationRisk:15};
+    el.innerHTML=`<div class="stats-grid">
+      <div class="stat-card"><div class="stat-label">Risk Score</div><div class="stat-value" style="color:${c}">${s}<span style="font-size:16px;font-weight:400">/100</span></div><div class="stat-sub">${s>=75?'🔴 High':s>=50?'🟡 Medium':'🟢 Low'}</div></div>
+      <div class="stat-card"><div class="stat-label">Alert</div><div class="stat-value">${d?.alertTriggered?'🚨':'✅'}</div><div class="stat-sub">${d?.alertTriggered?'Alert sent':'No alerts'}</div></div>
+      <div class="stat-card"><div class="stat-label">Last Updated</div><div class="stat-value" style="font-size:18px">${new Date(d?.timestamp??Date.now()).toLocaleTimeString()}</div><div class="stat-sub">Every 10 min</div></div>
+      <div class="stat-card"><div class="stat-label">Snapshots (24h)</div><div class="stat-value">${h.length}</div><div class="stat-sub">History</div></div>
+    </div>
+    <div class="card"><div class="card-title">📊 Risk Breakdown</div>${Object.entries(comp).map(([k,v])=>{const mx=maxMap[k]??25;const nm=k.replace(/([A-Z])/g,' $1').replace(/^./,s=>s.toUpperCase());const pct=Math.min((v/mx)*100,100);const fc=pct>70?'var(--red)':pct>40?'var(--yellow)':'var(--green)';return`<div style="margin-bottom:12px"><div style="display:flex;justify-content:space-between;font-size:13px;margin-bottom:4px"><span style="color:var(--muted)">${nm}</span><span style="font-weight:600">${v}/${mx}</span></div><div class="risk-meter"><div class="risk-fill" style="width:${pct}%;background:${fc}"></div></div></div>`;}).join('')}</div>
+    ${d?.topRiskyProtocols?.length?`<div class="card"><div class="card-title">⚠️ High-Risk Protocols</div><table><thead><tr><th>Protocol</th><th>Score</th><th>Level</th></tr></thead><tbody>${d.topRiskyProtocols.map(p=>`<tr><td><strong>${p.name}</strong></td><td>${p.score}/100</td><td><span class="badge ${p.score>=70?'badge-red':p.score>=40?'badge-yellow':'badge-green'}">${p.score>=70?'High':p.score>=40?'Medium':'Low'}</span></td></tr>`).join('')}</tbody></table></div>`:''}
+    <button class="btn btn-secondary" onclick="loadRiskMonitor()">🔄 Refresh</button>`;
+  }catch(e){el.innerHTML=`<div class="alert alert-error">Error: ${e.message}</div><button class="btn btn-secondary" onclick="loadRiskMonitor()">Retry</button>`;}
+}
+
+function showPage(id,btn){
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.nav-tab').forEach(t=>t.classList.remove('active'));
+  document.getElementById('page-'+id)?.classList.add('active');
+  btn?.classList.add('active');
+  if(id==='policies')loadUserPolicies();
+  if(id==='risk')loadRiskMonitor();
+  if(id==='dashboard')loadStats();
+}
+
+function showAlert(eid,type,msg){
+  const el=document.getElementById(eid);if(!el)return;
+  el.innerHTML=`<div class="alert alert-${type}">${msg}</div>`;
+  if(type!=='error')setTimeout(()=>{el.innerHTML='';},6000);
+}
+
+function fmt(n){const v=parseFloat(n)||0;if(v>=1e6)return(v/1e6).toFixed(2)+'M';if(v>=1e3)return(v/1e3).toFixed(1)+'K';return v.toFixed(2);}
+
+document.addEventListener('DOMContentLoaded',()=>{
+  loadStats();
+  if(window.ethereum)window.ethereum.request({method:'eth_accounts'}).then(a=>{if(a.length)connectWallet();});
+});
+</script>
+</body>
+</html>
