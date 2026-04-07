@@ -1,1 +1,1898 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>VaultAgent — One System. Total Control.</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=IBM+Plex+Mono:wght@300;400;500;600&family=Syne:wght@400;600;700;800&display=swap');
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#07090f;--bg2:#0b1019;--surface:#101622;--surface2:#16202f;
+  --border:#1c2b3a;--border2:#26394f;
+  --cyan:#00d4ff;--cyan-dim:rgba(0,212,255,0.08);
+  --violet:#8b5cf6;--violet-dim:rgba(139,92,246,0.08);
+  --green:#00e676;--green-dim:rgba(0,230,118,0.08);
+  --amber:#ffab00;--amber-dim:rgba(255,171,0,0.08);
+  --red:#ff3d57;--red-dim:rgba(255,61,87,0.08);
+  --text:#dde6f0;--text2:#6b849e;--text3:#344f64;
+  --mono:'IBM Plex Mono',monospace;
+  --head:'Syne',sans-serif;--serif:'DM Serif Display',serif;
+}
+html,body{height:100%;overflow:hidden}
+body{background:var(--bg);color:var(--text);font-family:var(--head);display:flex;flex-direction:row}
+body::before{
+  content:'';position:fixed;inset:0;pointer-events:none;z-index:0;
+  background-image:linear-gradient(rgba(0,212,255,0.01) 1px,transparent 1px),linear-gradient(90deg,rgba(0,212,255,0.01) 1px,transparent 1px);
+  background-size:48px 48px;
+}
 
+/* ══════════════ SIDEBAR ══════════════ */
+#sidebar{
+  width:220px;flex-shrink:0;height:100vh;
+  background:var(--bg2);border-right:1px solid var(--border);
+  display:flex;flex-direction:column;position:relative;z-index:10;
+}
+.sb-brand{
+  padding:1.2rem 1.2rem 1rem;border-bottom:1px solid var(--border);
+  display:flex;align-items:center;gap:8px;
+}
+.sb-logo{
+  font-family:var(--head);font-weight:800;font-size:1rem;color:var(--cyan);
+  letter-spacing:-0.01em;
+}
+.sb-dot{
+  width:7px;height:7px;border-radius:50%;background:var(--green);
+  box-shadow:0 0 6px var(--green);flex-shrink:0;
+  animation:sbpulse 2s ease infinite;
+}
+@keyframes sbpulse{0%,100%{opacity:1}50%{opacity:0.3}}
+.sb-section{
+  padding:0.6rem 0.8rem 0.2rem;
+  font-family:var(--mono);font-size:0.58rem;color:var(--text3);
+  letter-spacing:0.12em;text-transform:uppercase;
+}
+.sb-link{
+  display:flex;align-items:center;gap:0.6rem;
+  padding:0.55rem 1.2rem;cursor:pointer;
+  font-size:0.8rem;font-weight:600;color:var(--text2);
+  border-left:2px solid transparent;
+  transition:all 0.15s;
+}
+.sb-link:hover{color:var(--text);background:rgba(255,255,255,0.03)}
+.sb-link.active{color:var(--cyan);border-left-color:var(--cyan);background:var(--cyan-dim)}
+.sb-icon{font-size:0.85rem;width:16px;text-align:center}
+.sb-tag{
+  margin-left:auto;font-family:var(--mono);font-size:0.58rem;
+  padding:1px 5px;border-radius:2px;
+  background:var(--violet-dim);color:var(--violet);
+}
+.sb-footer{
+  margin-top:auto;padding:1rem 1.2rem;border-top:1px solid var(--border);
+  font-family:var(--mono);font-size:0.62rem;color:var(--text3);line-height:1.6;
+}
+
+/* ══════════════ MAIN CONTENT ══════════════ */
+#main{
+  flex:1;height:100vh;overflow-y:auto;position:relative;z-index:1;
+}
+.page{display:none;padding:2rem;min-height:100vh}
+.page.active{display:block}
+
+/* ══════════════ SHARED COMPONENTS ══════════════ */
+.page-header{margin-bottom:2rem}
+.page-eyebrow{
+  font-family:var(--mono);font-size:0.65rem;color:var(--cyan);
+  letter-spacing:0.15em;text-transform:uppercase;margin-bottom:0.4rem;
+}
+.page-title{
+  font-family:var(--serif);font-size:2.4rem;color:#fff;
+  line-height:1.1;margin-bottom:0.5rem;
+}
+.page-title span{color:var(--cyan)}
+.page-title em{color:var(--violet);font-style:italic}
+.page-sub{font-size:0.88rem;color:var(--text2);line-height:1.7;max-width:640px}
+
+.card{
+  background:var(--surface);border:1px solid var(--border);
+  border-radius:4px;overflow:hidden;margin-bottom:1.2rem;
+}
+.card-head{
+  padding:0.8rem 1.2rem;background:var(--bg2);
+  border-bottom:1px solid var(--border);
+  display:flex;align-items:center;justify-content:space-between;gap:1rem;
+}
+.card-title{font-size:0.82rem;font-weight:700;color:#fff}
+.card-sub{font-family:var(--mono);font-size:0.65rem;color:var(--text3)}
+.card-body{padding:1.2rem}
+
+.badge{
+  font-family:var(--mono);font-size:0.62rem;padding:2px 8px;
+  border-radius:20px;letter-spacing:0.05em;
+}
+.badge-green{background:var(--green-dim);color:var(--green);border:1px solid rgba(0,230,118,0.25)}
+.badge-amber{background:var(--amber-dim);color:var(--amber);border:1px solid rgba(255,171,0,0.25)}
+.badge-red{background:var(--red-dim);color:var(--red);border:1px solid rgba(255,61,87,0.25)}
+.badge-cyan{background:var(--cyan-dim);color:var(--cyan);border:1px solid rgba(0,212,255,0.25)}
+.badge-violet{background:var(--violet-dim);color:var(--violet);border:1px solid rgba(139,92,246,0.25)}
+
+.btn{
+  font-family:var(--mono);font-size:0.75rem;font-weight:600;
+  letter-spacing:0.04em;padding:9px 18px;border-radius:3px;
+  border:none;cursor:pointer;transition:all 0.2s;display:inline-flex;
+  align-items:center;gap:6px;
+}
+.btn:disabled{opacity:0.4;cursor:not-allowed}
+.btn-cyan{background:var(--cyan);color:#07090f}
+.btn-cyan:hover:not(:disabled){background:#33ddff;transform:translateY(-1px)}
+.btn-green{background:var(--green);color:#07090f}
+.btn-green:hover:not(:disabled){background:#33ff88;transform:translateY(-1px)}
+.btn-red{background:transparent;color:var(--red);border:1px solid var(--red)}
+.btn-red:hover:not(:disabled){background:var(--red-dim)}
+.btn-ghost{background:transparent;color:var(--text2);border:1px solid var(--border2)}
+.btn-ghost:hover:not(:disabled){color:var(--cyan);border-color:var(--cyan)}
+.btn-violet{background:var(--violet);color:#fff}
+.btn-violet:hover:not(:disabled){background:#9d6ffb;transform:translateY(-1px)}
+.btn-sm{padding:5px 12px;font-size:0.68rem}
+
+.mono-text{font-family:var(--mono);font-size:0.75rem}
+.grid-2{display:grid;grid-template-columns:1fr 1fr;gap:1.2rem}
+.grid-3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:1rem}
+.flex-row{display:flex;align-items:center;gap:0.75rem}
+.flex-between{display:flex;align-items:center;justify-content:space-between}
+
+.log-box{
+  background:var(--bg);border:1px solid var(--border);border-radius:3px;
+  padding:0.8rem;max-height:160px;overflow-y:auto;font-family:var(--mono);font-size:0.68rem;
+}
+.log-line{display:flex;gap:0.6rem;padding:2px 0}
+.log-t{color:var(--text3);flex-shrink:0}
+.log-m{color:var(--text2)}
+.log-ok{color:var(--green)}
+.log-warn{color:var(--amber)}
+.log-err{color:var(--red)}
+.log-info{color:var(--cyan)}
+
+input,select,textarea{
+  background:var(--surface);border:1px solid var(--border);
+  color:var(--text);font-family:var(--mono);font-size:0.78rem;
+  padding:8px 12px;border-radius:3px;outline:none;width:100%;
+  transition:border-color 0.2s;
+}
+input:focus,select:focus,textarea:focus{border-color:var(--cyan)}
+select option{background:var(--surface)}
+label{font-size:0.75rem;color:var(--text2);display:block;margin-bottom:4px}
+
+/* ════════════════════════════════════════
+   PAGE 0 — LANDING / OVERVIEW
+════════════════════════════════════════ */
+.hero-merged{
+  display:flex;align-items:center;gap:0.6rem;flex-wrap:wrap;
+  margin-bottom:1.8rem;
+}
+.merged-box{
+  font-family:var(--mono);font-size:0.72rem;padding:6px 14px;
+  border:1px solid var(--border2);color:var(--text2);border-radius:3px;background:var(--surface);
+}
+.merged-eq{font-family:var(--mono);font-size:1.1rem;color:var(--cyan)}
+.merged-result{
+  font-family:var(--mono);font-size:0.72rem;padding:6px 14px;
+  border:1px solid var(--cyan);color:var(--cyan);border-radius:3px;background:var(--cyan-dim);
+}
+.overview-grid{
+  display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));
+  gap:1px;background:var(--border);border:1px solid var(--border);border-radius:4px;overflow:hidden;
+  margin-bottom:1.5rem;
+}
+.ov-card{
+  background:var(--bg2);padding:1.1rem 1.2rem;cursor:pointer;
+  transition:background 0.2s;border-left:2px solid transparent;
+}
+.ov-card:hover{background:var(--surface);border-left-color:var(--cyan)}
+.ov-icon{font-size:1.3rem;margin-bottom:0.5rem}
+.ov-name{font-weight:700;font-size:0.85rem;color:#fff;margin-bottom:0.25rem}
+.ov-desc{font-size:0.73rem;color:var(--text2);line-height:1.5}
+
+.arch-box{
+  background:var(--surface);border:1px solid var(--border);border-radius:4px;
+  padding:1.5rem;margin-bottom:1.2rem;
+}
+.arch-process{
+  display:grid;grid-template-columns:1fr auto 1fr;gap:0;
+  border:1px solid var(--border);border-radius:4px;overflow:hidden;margin-bottom:1rem;
+}
+.arch-server{background:var(--bg2);padding:1.2rem}
+.arch-server-name{font-family:var(--mono);font-size:0.68rem;color:var(--cyan);letter-spacing:0.1em;margin-bottom:0.2rem}
+.arch-server-port{font-family:var(--mono);font-size:1.3rem;font-weight:600;color:#fff;margin-bottom:0.8rem}
+.arch-feature{
+  font-family:var(--mono);font-size:0.68rem;color:var(--text2);
+  padding:3px 0;border-top:1px solid var(--border);display:flex;align-items:center;gap:5px;
+}
+.arch-feature::before{content:'›';color:var(--cyan)}
+.arch-mid{
+  background:var(--border);width:1px;display:flex;align-items:center;justify-content:center;
+}
+.arch-bridge-strip{
+  background:var(--amber-dim);border-top:1px solid var(--border);
+  padding:0.8rem 1.2rem;display:flex;gap:0.6rem;align-items:center;flex-wrap:wrap;
+}
+.bridge-label{font-family:var(--mono);font-size:0.65rem;color:var(--amber);letter-spacing:0.1em;flex-shrink:0}
+.bridge-chip{
+  font-family:var(--mono);font-size:0.65rem;color:var(--text2);
+  padding:2px 8px;border:1px solid var(--border2);border-radius:2px;
+}
+
+/* ════════════════════════════════════════
+   PAGE 1 — PRESENTATION
+════════════════════════════════════════ */
+.slide-deck{display:flex;flex-direction:column;gap:2px;background:var(--border);border:1px solid var(--border);border-radius:4px;overflow:hidden}
+.slide{background:var(--bg2);padding:2rem 2.5rem;border-bottom:1px solid var(--border)}
+.slide:last-child{border-bottom:none}
+.slide-num{font-family:var(--mono);font-size:0.6rem;color:var(--text3);letter-spacing:0.12em;margin-bottom:0.4rem}
+.slide-head{font-family:var(--serif);font-size:1.8rem;color:#fff;margin-bottom:0.6rem}
+.slide-head span{color:var(--cyan)}
+.slide-body{font-size:0.85rem;color:var(--text2);line-height:1.7;max-width:700px;margin-bottom:1rem}
+.slide-cols{display:grid;grid-template-columns:1fr 1fr;gap:1.5rem}
+.slide-col-head{font-weight:700;color:#fff;font-size:0.85rem;margin-bottom:0.5rem}
+.slide-row{display:flex;align-items:flex-start;gap:0.5rem;font-size:0.8rem;color:var(--text2);padding:4px 0}
+.slide-row::before{content:'▸';color:var(--cyan);flex-shrink:0;margin-top:2px}
+.stat-row{display:grid;grid-template-columns:repeat(4,1fr);gap:1rem;margin-top:1rem}
+.stat-box{background:var(--surface);border:1px solid var(--border);border-radius:3px;padding:1rem;text-align:center}
+.stat-num{font-family:var(--serif);font-size:2rem;color:var(--cyan)}
+.stat-lbl{font-family:var(--mono);font-size:0.65rem;color:var(--text3);letter-spacing:0.08em;margin-top:2px}
+
+/* ════════════════════════════════════════
+   PAGE 2 — HITL
+════════════════════════════════════════ */
+.tg-chat{
+  background:#1c2733;border:1px solid #253545;border-radius:8px;overflow:hidden;
+  max-width:400px;
+}
+.tg-head{
+  background:#17212b;padding:0.8rem 1rem;display:flex;align-items:center;gap:0.6rem;
+  border-bottom:1px solid #253545;
+}
+.tg-avatar{
+  width:32px;height:32px;border-radius:50%;background:var(--violet);
+  display:flex;align-items:center;justify-content:center;font-size:0.8rem;font-weight:700;
+}
+.tg-name{font-size:0.85rem;font-weight:700;color:#fff}
+.tg-status{font-size:0.68rem;color:#6b8096}
+.tg-body{padding:1rem;min-height:200px;max-height:320px;overflow-y:auto}
+.tg-msg{
+  background:#182533;border:1px solid #253545;border-radius:6px;
+  padding:0.8rem;margin-bottom:0.6rem;font-size:0.78rem;
+}
+.tg-msg-head{font-weight:700;color:var(--cyan);margin-bottom:0.4rem;font-size:0.72rem}
+.tg-msg-body{color:#c5d8ea;line-height:1.6}
+.tg-msg-detail{font-family:var(--mono);font-size:0.68rem;color:#6b8096;margin-top:0.3rem}
+.tg-btns{display:flex;gap:0.5rem;margin-top:0.6rem}
+.tg-btn{
+  flex:1;padding:6px;text-align:center;border-radius:4px;
+  font-size:0.75rem;font-weight:600;cursor:pointer;border:none;transition:all 0.2s;
+}
+.tg-btn-approve{background:#2ea043;color:#fff}
+.tg-btn-approve:hover{background:#39c455}
+.tg-btn-reject{background:#c93333;color:#fff}
+.tg-btn-reject:hover{background:#e03d3d}
+.tg-system{
+  font-size:0.7rem;color:#6b8096;text-align:center;margin:0.5rem 0;
+}
+.hitl-controls{display:flex;flex-direction:column;gap:1rem}
+.hitl-form{display:grid;grid-template-columns:1fr 1fr;gap:0.8rem}
+.hitl-form-full{grid-column:1/-1}
+
+/* ════════════════════════════════════════
+   PAGE 3 — MULTI-LLM
+════════════════════════════════════════ */
+.llm-router{
+  background:var(--surface);border:1px solid var(--border);border-radius:4px;
+  padding:1.2rem;margin-bottom:1.2rem;
+}
+.llm-cards{display:grid;grid-template-columns:repeat(3,1fr);gap:1rem;margin-bottom:1.2rem}
+.llm-card{
+  background:var(--bg2);border:1px solid var(--border);border-radius:3px;padding:1rem;
+  transition:border-color 0.3s;
+}
+.llm-card.active{border-color:var(--green);background:var(--green-dim)}
+.llm-card.fallback{border-color:var(--amber);background:var(--amber-dim)}
+.llm-card.inactive{opacity:0.5}
+.llm-card-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:0.5rem}
+.llm-model{font-weight:700;font-size:0.85rem;color:#fff}
+.llm-indicator{width:8px;height:8px;border-radius:50%}
+.ind-on{background:var(--green);box-shadow:0 0 6px var(--green);animation:pulse-ind 1.5s ease infinite}
+.ind-standby{background:var(--text3)}
+.ind-fallback{background:var(--amber);box-shadow:0 0 6px var(--amber)}
+@keyframes pulse-ind{0%,100%{opacity:1}50%{opacity:0.4}}
+.llm-role-tag{font-family:var(--mono);font-size:0.62rem;color:var(--text3);letter-spacing:0.06em}
+.llm-stat{font-family:var(--mono);font-size:0.7rem;color:var(--text2);margin-top:0.3rem}
+
+.llm-prompt-area{display:flex;gap:0.75rem;margin-bottom:1rem}
+.llm-prompt-area input{flex:1}
+.llm-output{
+  background:var(--bg);border:1px solid var(--border);border-radius:3px;
+  padding:1rem;min-height:120px;font-family:var(--mono);font-size:0.75rem;
+  color:var(--text);line-height:1.7;white-space:pre-wrap;
+}
+.llm-thinking{color:var(--cyan);animation:blink 0.8s step-end infinite}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:0}}
+
+/* ════════════════════════════════════════
+   PAGE 4 — RBAC
+════════════════════════════════════════ */
+.rbac-layout{display:grid;grid-template-columns:200px 1fr;gap:0;border:1px solid var(--border);border-radius:4px;overflow:hidden}
+.rbac-sidebar{background:var(--bg2);border-right:1px solid var(--border)}
+.rbac-sb-title{
+  padding:0.7rem 1rem;font-family:var(--mono);font-size:0.62rem;
+  color:var(--text3);letter-spacing:0.1em;border-bottom:1px solid var(--border);
+}
+.rbac-user{
+  padding:0.7rem 1rem;border-bottom:1px solid var(--border);cursor:pointer;
+  display:flex;align-items:center;gap:0.5rem;transition:all 0.15s;
+  border-left:2px solid transparent;
+}
+.rbac-user:hover{background:var(--surface)}
+.rbac-user.active{background:var(--cyan-dim);border-left-color:var(--cyan)}
+.rbac-av{
+  width:26px;height:26px;border-radius:50%;display:flex;align-items:center;
+  justify-content:center;font-size:0.6rem;font-weight:800;flex-shrink:0;color:#fff;
+}
+.rbac-uinfo .rbac-uname{font-size:0.78rem;font-weight:700;color:#fff}
+.rbac-uinfo .rbac-urole{font-family:var(--mono);font-size:0.6rem;color:var(--text3)}
+.rbac-main{padding:1.2rem;background:var(--surface)}
+.rbac-main-title{font-weight:700;font-size:0.9rem;color:#fff;margin-bottom:0.2rem}
+.rbac-main-sub{font-family:var(--mono);font-size:0.65rem;color:var(--text3);margin-bottom:1rem}
+.perm-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(175px,1fr));gap:0.5rem;margin-bottom:1rem}
+.perm-item{
+  display:flex;align-items:center;gap:0.5rem;padding:7px 10px;
+  border-radius:3px;background:var(--bg2);border:1px solid var(--border);
+  font-family:var(--mono);font-size:0.68rem;cursor:pointer;transition:all 0.2s;
+}
+.perm-item.granted{border-color:rgba(0,230,118,0.35);background:var(--green-dim);color:var(--green)}
+.perm-item.denied{color:var(--text3)}
+.perm-item.granted:hover{border-color:rgba(0,230,118,0.6)}
+.perm-item.denied:hover{border-color:var(--border2);color:var(--text2)}
+.perm-icon{font-size:0.75rem}
+
+/* ════════════════════════════════════════
+   PAGE 5 — BLOCKCHAIN
+════════════════════════════════════════ */
+.wallet-hero{
+  background:linear-gradient(135deg,var(--surface) 0%,var(--surface2) 100%);
+  border:1px solid var(--border);border-radius:4px;padding:1.5rem;margin-bottom:1.2rem;
+}
+.wallet-label{font-family:var(--mono);font-size:0.62rem;color:var(--text3);letter-spacing:0.1em;margin-bottom:0.3rem}
+.wallet-address{font-family:var(--mono);font-size:0.75rem;color:var(--cyan);word-break:break-all;margin-bottom:1rem}
+.wallet-balance{font-family:var(--serif);font-size:2.8rem;color:#fff;margin-bottom:0.2rem}
+.wallet-usd{font-family:var(--mono);font-size:0.85rem;color:var(--text2);margin-bottom:1.2rem}
+.wallet-actions{display:flex;gap:0.75rem}
+.tx-table{border:1px solid var(--border);border-radius:3px;overflow:hidden;font-family:var(--mono);font-size:0.7rem}
+.tx-thead{
+  display:grid;grid-template-columns:1.6fr 1fr 1fr 0.8fr 70px;
+  padding:0.5rem 1rem;background:var(--bg2);color:var(--text3);
+  letter-spacing:0.08em;border-bottom:1px solid var(--border);
+}
+.tx-row{
+  display:grid;grid-template-columns:1.6fr 1fr 1fr 0.8fr 70px;
+  padding:0.65rem 1rem;border-bottom:1px solid var(--border);
+  align-items:center;transition:background 0.15s;
+}
+.tx-row:last-child{border-bottom:none}
+.tx-row:hover{background:var(--surface2)}
+.tx-hash{color:var(--cyan);cursor:pointer}
+.tx-hash:hover{text-decoration:underline}
+.tx-from{color:var(--text2);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.amt-in{color:var(--green)}
+.amt-out{color:var(--red)}
+
+.send-form{display:grid;grid-template-columns:1fr 1fr;gap:0.8rem}
+.send-form-full{grid-column:1/-1}
+.gas-indicator{
+  display:flex;gap:1rem;font-family:var(--mono);font-size:0.72rem;
+  background:var(--bg2);border:1px solid var(--border);border-radius:3px;padding:0.7rem 1rem;margin-bottom:0.8rem;
+}
+.gas-item{display:flex;flex-direction:column;gap:2px}
+.gas-label{color:var(--text3);font-size:0.62rem;letter-spacing:0.08em}
+.gas-val{color:var(--amber);font-size:0.85rem;font-weight:600}
+
+/* ════════════════════════════════════════
+   PAGE 6 — BANKING
+════════════════════════════════════════ */
+.bank-accounts{display:grid;grid-template-columns:1fr 1fr;gap:1rem;margin-bottom:1.2rem}
+.bank-account{
+  background:var(--surface);border:1px solid var(--border);border-radius:4px;padding:1.2rem;
+}
+.bank-acct-type{font-family:var(--mono);font-size:0.62rem;color:var(--text3);letter-spacing:0.1em;margin-bottom:0.4rem}
+.bank-acct-name{font-weight:700;color:#fff;margin-bottom:0.5rem}
+.bank-acct-bal{font-family:var(--serif);font-size:1.8rem;color:var(--green);margin-bottom:0.2rem}
+.bank-acct-num{font-family:var(--mono);font-size:0.68rem;color:var(--text3)}
+.stripe-payment{
+  background:var(--surface);border:1px solid var(--border);border-radius:4px;padding:1.2rem;
+}
+.stripe-form{display:grid;grid-template-columns:1fr 1fr;gap:0.75rem}
+.stripe-form-full{grid-column:1/-1}
+
+/* ════════════════════════════════════════
+   PAGE 7 — AGENT SPAWNING
+════════════════════════════════════════ */
+.agent-canvas{
+  background:var(--bg);border:1px solid var(--border);border-radius:4px;
+  padding:1.5rem;min-height:280px;position:relative;overflow:hidden;margin-bottom:1.2rem;
+}
+.agent-node{
+  position:absolute;background:var(--surface);border:1px solid var(--border);
+  border-radius:4px;padding:0.6rem 0.8rem;width:130px;
+  font-size:0.72rem;cursor:default;transition:all 0.3s;
+  box-shadow:0 4px 12px rgba(0,0,0,0.3);
+}
+.agent-node.master{border-color:var(--cyan);background:var(--cyan-dim)}
+.agent-node.active{border-color:var(--green);background:var(--green-dim)}
+.agent-node.spawning{border-color:var(--amber);background:var(--amber-dim);animation:nodeSpawn 0.5s ease}
+@keyframes nodeSpawn{from{transform:scale(0.5);opacity:0}to{transform:scale(1);opacity:1}}
+.agent-node.idle{opacity:0.5}
+.agent-node-role{font-family:var(--mono);font-size:0.58rem;color:var(--text3);letter-spacing:0.08em;margin-bottom:0.2rem}
+.agent-node-name{font-weight:700;color:#fff;margin-bottom:0.3rem;font-size:0.78rem}
+.agent-node-status{font-family:var(--mono);font-size:0.6rem}
+
+.a2a-feed{
+  background:var(--bg2);border:1px solid var(--border);border-radius:3px;
+  padding:0.8rem;height:140px;overflow-y:auto;font-family:var(--mono);font-size:0.68rem;
+  margin-bottom:1rem;
+}
+.a2a-msg{
+  display:flex;gap:0.5rem;padding:3px 0;border-bottom:1px solid rgba(255,255,255,0.03);
+}
+.a2a-from{color:var(--violet);flex-shrink:0}
+.a2a-arrow{color:var(--text3)}
+.a2a-to{color:var(--cyan);flex-shrink:0}
+.a2a-content{color:var(--text2)}
+
+/* ════════════════════════════════════════
+   PAGE 8 — AUDIT LOG
+════════════════════════════════════════ */
+.audit-table{border:1px solid var(--border);border-radius:4px;overflow:hidden;font-family:var(--mono);font-size:0.68rem}
+.audit-thead{
+  display:grid;grid-template-columns:140px 90px 1fr 180px;
+  padding:0.5rem 1rem;background:var(--bg2);color:var(--text3);
+  letter-spacing:0.08em;border-bottom:1px solid var(--border);
+}
+.audit-row{
+  display:grid;grid-template-columns:140px 90px 1fr 180px;
+  padding:0.65rem 1rem;border-bottom:1px solid var(--border);
+  align-items:center;transition:background 0.15s;
+}
+.audit-row:hover{background:var(--surface2)}
+.audit-row:last-child{border-bottom:none}
+.a-time{color:var(--text3)}
+.a-actor{color:var(--violet)}
+.a-action{color:var(--text)}
+.a-hash{color:var(--green);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:0.62rem}
+.chain-visual{
+  display:flex;align-items:center;gap:0;overflow-x:auto;padding:1rem;
+  background:var(--bg);border:1px solid var(--border);border-radius:3px;margin-bottom:1rem;
+}
+.chain-block{
+  flex-shrink:0;background:var(--surface);border:1px solid var(--border);
+  border-radius:3px;padding:0.6rem 0.8rem;width:120px;
+  font-family:var(--mono);font-size:0.62rem;
+}
+.chain-block.latest{border-color:var(--green)}
+.chain-block-num{color:var(--cyan);font-weight:600;margin-bottom:0.2rem}
+.chain-block-hash{color:var(--text3);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.chain-block-prev{color:var(--green);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.chain-arrow{color:var(--text3);padding:0 0.5rem;flex-shrink:0}
+.tamper-alert{
+  background:var(--red-dim);border:1px solid rgba(255,61,87,0.35);border-radius:3px;
+  padding:0.8rem 1rem;font-family:var(--mono);font-size:0.75rem;color:var(--red);
+  display:none;align-items:center;gap:0.5rem;margin-bottom:1rem;
+}
+.tamper-alert.show{display:flex}
+</style>
+</head>
+<body>
+
+<!-- ══════════════ SIDEBAR ══════════════ -->
+<div id="sidebar">
+  <div class="sb-brand">
+    <div class="sb-dot"></div>
+    <div class="sb-logo">VaultAgent</div>
+  </div>
+  <div class="sb-section">Overview</div>
+  <div class="sb-link active" onclick="showPage('home')"><span class="sb-icon">◈</span> System Overview</div>
+  <div class="sb-link" onclick="showPage('presentation')"><span class="sb-icon">◻</span> Business Deck<span class="sb-tag">PITCH</span></div>
+  <div class="sb-section">Live Demos</div>
+  <div class="sb-link" onclick="showPage('hitl')"><span class="sb-icon">🔔</span> HITL Approval</div>
+  <div class="sb-link" onclick="showPage('llm')"><span class="sb-icon">🧠</span> Multi-LLM Brain</div>
+  <div class="sb-link" onclick="showPage('rbac')"><span class="sb-icon">🔐</span> RBAC / Auth</div>
+  <div class="sb-link" onclick="showPage('blockchain')"><span class="sb-icon">⛓</span> Blockchain</div>
+  <div class="sb-link" onclick="showPage('banking')"><span class="sb-icon">🏦</span> Banking</div>
+  <div class="sb-link" onclick="showPage('agents')"><span class="sb-icon">🤖</span> Agent Spawning</div>
+  <div class="sb-link" onclick="showPage('audit')"><span class="sb-icon">📋</span> Audit Logs</div>
+  <div class="sb-footer">
+    <div>VaultAgent v1.0</div>
+    <div style="color:var(--text3)">AgenticVault + AutonomousAgent</div>
+    <div style="color:var(--text3)">One Process · Two Servers</div>
+  </div>
+</div>
+
+<!-- ══════════════ PAGES ══════════════ -->
+<div id="main">
+
+<!-- ══ PAGE: HOME ══ -->
+<div id="page-home" class="page active">
+  <div class="page-header">
+    <div class="page-eyebrow">System Overview</div>
+    <div class="page-title">One System. <span>Total Control.</span></div>
+    <div class="page-sub">VaultAgent merges two codebases into a single Node.js process — AgenticVault (authorization infrastructure) with AutonomousAgent (intelligent execution engine). Every action is authorized, logged, and human-approved.</div>
+  </div>
+
+  <div class="hero-merged">
+    <div class="merged-box">AgenticVault<br><span style="font-size:0.6rem;color:var(--text3)">Auth · RBAC · Blockchain · MCP</span></div>
+    <div class="merged-eq">+</div>
+    <div class="merged-box">AutonomousAgent<br><span style="font-size:0.6rem;color:var(--text3)">HITL · Multi-LLM · Banking · Spawning</span></div>
+    <div class="merged-eq">=</div>
+    <div class="merged-result">VaultAgent ◈<br><span style="font-size:0.6rem">ONE PROCESS · TWO SERVERS</span></div>
+  </div>
+
+  <!-- Architecture -->
+  <div class="card" style="margin-bottom:1.2rem">
+    <div class="card-head">
+      <div>
+        <div class="card-title">Process Architecture</div>
+        <div class="card-sub">Single Node.js runtime — Express :3000 + Fastify :8443 + Bridge Layer</div>
+      </div>
+      <div class="badge badge-green">RUNNING</div>
+    </div>
+    <div class="card-body">
+      <div class="arch-process">
+        <div class="arch-server">
+          <div class="arch-server-name">EXPRESS HTTP</div>
+          <div class="arch-server-port">:3000</div>
+          <div class="arch-feature">Auth0 OAuth Login</div>
+          <div class="arch-feature">HTML Dashboard</div>
+          <div class="arch-feature">REST API (RBAC)</div>
+          <div class="arch-feature">MCP SSE Endpoint</div>
+        </div>
+        <div class="arch-mid"></div>
+        <div class="arch-server">
+          <div class="arch-server-name">FASTIFY HTTPS</div>
+          <div class="arch-server-port">:8443</div>
+          <div class="arch-feature">JWT + API Key Auth</div>
+          <div class="arch-feature">Autonomous Agent API</div>
+          <div class="arch-feature">HITL Endpoints</div>
+          <div class="arch-feature">Agent Spawning</div>
+        </div>
+      </div>
+      <div class="arch-bridge-strip">
+        <span class="bridge-label">BRIDGE LAYER</span>
+        <span class="bridge-chip">db (PostgreSQL)</span>
+        <span class="bridge-chip">redis (cache)</span>
+        <span class="bridge-chip">permissions</span>
+        <span class="bridge-chip">security / KMS</span>
+        <span class="bridge-chip">SQLite (agent state)</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Feature grid -->
+  <div style="margin-bottom:0.5rem;font-family:var(--mono);font-size:0.65rem;color:var(--text3);letter-spacing:0.12em">CAPABILITIES — CLICK ANY TO DEMO</div>
+  <div class="overview-grid">
+    <div class="ov-card" onclick="showPage('hitl')">
+      <div class="ov-icon">🔔</div>
+      <div class="ov-name">HITL Approval</div>
+      <div class="ov-desc">All financial actions require human approval via Telegram inline buttons before execution</div>
+    </div>
+    <div class="ov-card" onclick="showPage('llm')">
+      <div class="ov-icon">🧠</div>
+      <div class="ov-name">Multi-LLM Brain</div>
+      <div class="ov-desc">Claude (primary) + DeepSeek API + Ollama local with automatic fallback routing</div>
+    </div>
+    <div class="ov-card" onclick="showPage('rbac')">
+      <div class="ov-icon">🔐</div>
+      <div class="ov-name">Fine-grained RBAC</div>
+      <div class="ov-desc">Per-user, per-agent, per-API-key permissions. Auth0 JWT for humans, API keys for machines</div>
+    </div>
+    <div class="ov-card" onclick="showPage('blockchain')">
+      <div class="ov-icon">⛓</div>
+      <div class="ov-name">Crypto / Blockchain</div>
+      <div class="ov-desc">ETH wallet management, send/receive, NFT, DeFi tokens via ethers.js v6 + Alchemy</div>
+    </div>
+    <div class="ov-card" onclick="showPage('banking')">
+      <div class="ov-icon">🏦</div>
+      <div class="ov-name">Banking</div>
+      <div class="ov-desc">Read Plaid balance & transactions. Send payments via Stripe. All HITL-gated.</div>
+    </div>
+    <div class="ov-card" onclick="showPage('agents')">
+      <div class="ov-icon">🤖</div>
+      <div class="ov-name">Agent Spawning</div>
+      <div class="ov-desc">Spawn sub-agents, A2A message bus, team coordination with persistent SQLite memory</div>
+    </div>
+    <div class="ov-card" onclick="showPage('audit')">
+      <div class="ov-icon">📋</div>
+      <div class="ov-name">Audit Logs</div>
+      <div class="ov-desc">Tamper-evident chained SHA-256 log entries. Every action traceable forever.</div>
+    </div>
+    <div class="ov-card" onclick="showPage('presentation')">
+      <div class="ov-icon">📊</div>
+      <div class="ov-name">MCP Protocol</div>
+      <div class="ov-desc">DeepSeek MCP, Ollama MCP, filesystem MCP, memory MCP — model context protocol</div>
+    </div>
+  </div>
+</div>
+
+<!-- ══ PAGE: PRESENTATION ══ -->
+<div id="page-presentation" class="page">
+  <div class="page-header">
+    <div class="page-eyebrow">Business Presentation</div>
+    <div class="page-title">VaultAgent — <em>Authorized to Act</em></div>
+    <div class="page-sub">The AI agent infrastructure platform that lets you deploy autonomous agents that can take real-world actions — safely, auditably, and with human oversight.</div>
+  </div>
+
+  <div class="slide-deck">
+    <div class="slide">
+      <div class="slide-num">01 / PROBLEM</div>
+      <div class="slide-head">AI agents are <span>powerful but ungoverned</span></div>
+      <div class="slide-body">Today's AI agents can write code, send emails, move money, and interact with APIs — but there's no standard way to authorize, audit, or control what they're actually allowed to do. Enterprises need agents they can trust.</div>
+      <div class="slide-cols">
+        <div>
+          <div class="slide-col-head">❌ Without VaultAgent</div>
+          <div class="slide-row">No permission boundaries on agent actions</div>
+          <div class="slide-row">No human oversight for high-risk operations</div>
+          <div class="slide-row">No audit trail — who did what, when</div>
+          <div class="slide-row">Single LLM failure = total system failure</div>
+          <div class="slide-row">Auth bolted on as afterthought</div>
+        </div>
+        <div>
+          <div class="slide-col-head">✅ With VaultAgent</div>
+          <div class="slide-row">Fine-grained RBAC per user, agent, API key</div>
+          <div class="slide-row">HITL gates every financial/sensitive action</div>
+          <div class="slide-row">Tamper-evident SHA-256 chained audit log</div>
+          <div class="slide-row">Claude → DeepSeek → Ollama auto-fallback</div>
+          <div class="slide-row">Auth0 JWT + API keys + agent identities</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="slide">
+      <div class="slide-num">02 / SOLUTION</div>
+      <div class="slide-head">One process. <span>Two servers.</span> Total coverage.</div>
+      <div class="slide-body">VaultAgent merges AgenticVault (authorization infrastructure) with AutonomousAgent (execution intelligence) into a single deployable Node.js process. Express :3000 handles the human-facing dashboard and OAuth. Fastify :8443 handles the agent API and HITL. A bridge layer connects both.</div>
+      <div style="margin-top:1rem">
+        <div class="stat-row">
+          <div class="stat-box"><div class="stat-num">2</div><div class="stat-lbl">SERVERS IN 1 PROCESS</div></div>
+          <div class="stat-box"><div class="stat-num">3</div><div class="stat-lbl">LLM PROVIDERS</div></div>
+          <div class="stat-box"><div class="stat-num">100%</div><div class="stat-lbl">FINANCIAL ACTIONS HITL-GATED</div></div>
+          <div class="stat-box"><div class="stat-num">∞</div><div class="stat-lbl">AUDIT CHAIN DEPTH</div></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="slide">
+      <div class="slide-num">03 / HUMAN-IN-THE-LOOP</div>
+      <div class="slide-head">Agents act. <span>Humans approve.</span></div>
+      <div class="slide-body">Every financial action — wire transfers, crypto sends, Stripe payments, DeFi interactions — generates a real-time Telegram message with inline Approve / Reject buttons. The agent waits. The human decides. The system executes. Full audit trail created automatically.</div>
+      <div class="slide-cols">
+        <div>
+          <div class="slide-col-head">HITL Flow</div>
+          <div class="slide-row">Agent requests: "Send 0.5 ETH to 0xABCD..."</div>
+          <div class="slide-row">System holds — creates pending approval record</div>
+          <div class="slide-row">Telegram bot pushes notification with context</div>
+          <div class="slide-row">Human taps Approve or Reject inline button</div>
+          <div class="slide-row">Action executes (or is cancelled) + logged</div>
+        </div>
+        <div>
+          <div class="slide-col-head">Covered Actions</div>
+          <div class="slide-row">ETH / token sends and DeFi swaps</div>
+          <div class="slide-row">Stripe payment initiation</div>
+          <div class="slide-row">Plaid-linked bank transfers</div>
+          <div class="slide-row">Spawning new sub-agents</div>
+          <div class="slide-row">Any action marked sensitive in RBAC</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="slide">
+      <div class="slide-num">04 / MULTI-LLM</div>
+      <div class="slide-head">Claude first. <span>Never stuck.</span></div>
+      <div class="slide-body">The agent brain uses Claude (Anthropic) as primary, with automatic fallback to DeepSeek API and then Ollama running locally. If any provider is down or rate-limited, the system reroutes transparently. MCP protocol (Model Context Protocol) connects DeepSeek, Ollama, filesystem, and memory as tools.</div>
+      <div class="slide-cols">
+        <div>
+          <div class="slide-col-head">LLM Stack</div>
+          <div class="slide-row">Claude (Anthropic) — primary reasoning</div>
+          <div class="slide-row">DeepSeek API — fallback + cost optimization</div>
+          <div class="slide-row">Ollama local — air-gapped / private data</div>
+          <div class="slide-row">Auto-fallback with zero configuration</div>
+        </div>
+        <div>
+          <div class="slide-col-head">MCP Servers</div>
+          <div class="slide-row">DeepSeek MCP — extended capabilities</div>
+          <div class="slide-row">Ollama MCP — local model tools</div>
+          <div class="slide-row">Filesystem MCP — file read/write/search</div>
+          <div class="slide-row">Memory MCP — persistent agent context</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="slide">
+      <div class="slide-num">05 / AUTHORIZATION</div>
+      <div class="slide-head">Three identity types. <span>One permission system.</span></div>
+      <div class="slide-body">VaultAgent handles three distinct actors: humans (Auth0 JWT/JWKS OAuth), machines (API keys with scoped permissions), and agents (agent identities with task-specific grants). Every API call checks the requester's identity type and permission set before execution.</div>
+      <div class="slide-cols">
+        <div>
+          <div class="slide-col-head">Identity Types</div>
+          <div class="slide-row">Humans → Auth0 OAuth + JWT</div>
+          <div class="slide-row">Machines → Scoped API keys</div>
+          <div class="slide-row">Agents → Agent identities</div>
+          <div class="slide-row">Admin → Full permission grants</div>
+        </div>
+        <div>
+          <div class="slide-col-head">Permission Scopes</div>
+          <div class="slide-row">blockchain:read / blockchain:write</div>
+          <div class="slide-row">agent:run / agent:spawn</div>
+          <div class="slide-row">banking:read / banking:transfer</div>
+          <div class="slide-row">admin:users / admin:permissions</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="slide">
+      <div class="slide-num">06 / AUDIT + COMPLIANCE</div>
+      <div class="slide-head">Every action. <span>Forever traceable.</span></div>
+      <div class="slide-body">Every event in VaultAgent creates an audit log entry chained with SHA-256 — each entry includes the previous entry's hash, making tampering immediately detectable. The chain can be verified at any time. PostgreSQL stores the permanent record; Redis caches for real-time queries.</div>
+      <div class="slide-cols">
+        <div>
+          <div class="slide-col-head">Log Entry Contains</div>
+          <div class="slide-row">Timestamp (ms precision)</div>
+          <div class="slide-row">Actor ID + identity type</div>
+          <div class="slide-row">Action + parameters</div>
+          <div class="slide-row">SHA-256 of (payload + prev_hash)</div>
+        </div>
+        <div>
+          <div class="slide-col-head">Tamper Detection</div>
+          <div class="slide-row">Any modified entry breaks the chain</div>
+          <div class="slide-row">Deletions are detectable by gap in chain</div>
+          <div class="slide-row">Real-time chain integrity verification</div>
+          <div class="slide-row">Export-ready for compliance audits</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="slide">
+      <div class="slide-num">07 / DEPLOYMENT</div>
+      <div class="slide-head">Deploy once. <span>Run everything.</span></div>
+      <div class="slide-body">Single Node.js process deploys to Render via render.yaml. PostgreSQL and Redis are provisioned as managed services. Secrets managed in environment variables. The entire platform — both servers, all agents, all integrations — runs from one deployment.</div>
+      <div class="slide-cols">
+        <div>
+          <div class="slide-col-head">Infrastructure</div>
+          <div class="slide-row">Node.js (Express + Fastify in one process)</div>
+          <div class="slide-row">PostgreSQL — user data + audit logs</div>
+          <div class="slide-row">Redis — session cache + rate limiting</div>
+          <div class="slide-row">SQLite — agent memory + state</div>
+        </div>
+        <div>
+          <div class="slide-col-head">Integrations</div>
+          <div class="slide-row">Auth0 — OAuth / JWKS</div>
+          <div class="slide-row">Alchemy — Ethereum node</div>
+          <div class="slide-row">Plaid — bank account read</div>
+          <div class="slide-row">Stripe — payment processing</div>
+          <div class="slide-row">Telegram Bot — HITL notifications</div>
+          <div class="slide-row">Twilio SMS — alerts</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ══ PAGE: HITL ══ -->
+<div id="page-hitl" class="page">
+  <div class="page-header">
+    <div class="page-eyebrow">Human-in-the-Loop</div>
+    <div class="page-title">Agents ask. <span>You decide.</span></div>
+    <div class="page-sub">Every financial or sensitive action triggers a Telegram approval request. The agent is blocked until you respond. Try the demo — create a pending action and approve or reject it.</div>
+  </div>
+
+  <div class="grid-2">
+    <!-- Left: controls -->
+    <div>
+      <div class="card">
+        <div class="card-head"><div class="card-title">Trigger an Agent Action</div></div>
+        <div class="card-body">
+          <div style="margin-bottom:0.75rem">
+            <label>Action Type</label>
+            <select id="hitl-type">
+              <option value="eth-send">Send ETH</option>
+              <option value="stripe">Stripe Payment</option>
+              <option value="plaid-transfer">Bank Transfer</option>
+              <option value="spawn-agent">Spawn Sub-Agent</option>
+              <option value="defi-swap">DeFi Swap</option>
+            </select>
+          </div>
+          <div style="margin-bottom:0.75rem">
+            <label>Amount / Details</label>
+            <input type="text" id="hitl-amount" value="0.5 ETH → 0x742d...F4e2" />
+          </div>
+          <div style="margin-bottom:0.75rem">
+            <label>Requesting Agent</label>
+            <select id="hitl-agent">
+              <option>agent-alpha (financial-ops)</option>
+              <option>agent-beta (trading-bot)</option>
+              <option>agent-gamma (data-collector)</option>
+            </select>
+          </div>
+          <button class="btn btn-cyan" onclick="triggerHITL()" style="width:100%">⚡ Request Approval</button>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-head">
+          <div class="card-title">System Log</div>
+          <div class="badge badge-cyan" id="hitl-pending-count">0 PENDING</div>
+        </div>
+        <div class="card-body" style="padding:0">
+          <div class="log-box" id="hitl-log" style="border:none;border-radius:0;max-height:200px">
+            <div class="log-line"><span class="log-t">00:00:00</span><span class="log-m">HITL system ready</span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Right: Telegram simulation -->
+    <div>
+      <div style="margin-bottom:0.75rem;font-family:var(--mono);font-size:0.65rem;color:var(--text3);letter-spacing:0.1em">TELEGRAM BOT — VaultAgent Approvals</div>
+      <div class="tg-chat">
+        <div class="tg-head">
+          <div class="tg-avatar">🤖</div>
+          <div>
+            <div class="tg-name">VaultAgent Bot</div>
+            <div class="tg-status">online · awaiting approvals</div>
+          </div>
+          <div class="badge badge-green" style="margin-left:auto">LIVE</div>
+        </div>
+        <div class="tg-body" id="tg-body">
+          <div class="tg-system">🔒 VaultAgent HITL System Active</div>
+          <div class="tg-system">All financial actions require your approval</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ══ PAGE: MULTI-LLM ══ -->
+<div id="page-llm" class="page">
+  <div class="page-header">
+    <div class="page-eyebrow">Multi-LLM Brain</div>
+    <div class="page-title">Claude first. <span>Never stuck.</span></div>
+    <div class="page-sub">The agent routes to Claude by default. If Claude fails or is rate-limited, it auto-falls to DeepSeek API, then Ollama local. Try simulating failures to watch the router work.</div>
+  </div>
+
+  <div class="llm-cards">
+    <div class="llm-card active" id="llm-claude">
+      <div class="llm-card-top">
+        <div>
+          <div class="llm-model">Claude Sonnet</div>
+          <div class="llm-role-tag">PRIMARY · ANTHROPIC</div>
+        </div>
+        <div class="llm-indicator ind-on" id="ind-claude"></div>
+      </div>
+      <div class="llm-stat">Status: <span style="color:var(--green)">ACTIVE</span></div>
+      <div class="llm-stat">Latency: <span id="claude-lat">~1.2s</span></div>
+      <div style="margin-top:0.7rem;display:flex;gap:0.4rem">
+        <button class="btn btn-ghost btn-sm" onclick="failLLM('claude')">Simulate Failure</button>
+        <button class="btn btn-green btn-sm" onclick="restoreLLM('claude')">Restore</button>
+      </div>
+    </div>
+    <div class="llm-card inactive" id="llm-deepseek">
+      <div class="llm-card-top">
+        <div>
+          <div class="llm-model">DeepSeek API</div>
+          <div class="llm-role-tag">FALLBACK #1</div>
+        </div>
+        <div class="llm-indicator ind-standby" id="ind-deepseek"></div>
+      </div>
+      <div class="llm-stat">Status: <span style="color:var(--text3)" id="deepseek-status">STANDBY</span></div>
+      <div class="llm-stat">Latency: <span id="deepseek-lat">~2.1s</span></div>
+      <div style="margin-top:0.7rem;display:flex;gap:0.4rem">
+        <button class="btn btn-ghost btn-sm" onclick="failLLM('deepseek')">Simulate Failure</button>
+        <button class="btn btn-green btn-sm" onclick="restoreLLM('deepseek')">Restore</button>
+      </div>
+    </div>
+    <div class="llm-card inactive" id="llm-ollama">
+      <div class="llm-card-top">
+        <div>
+          <div class="llm-model">Ollama Local</div>
+          <div class="llm-role-tag">FALLBACK #2 · PRIVATE</div>
+        </div>
+        <div class="llm-indicator ind-standby" id="ind-ollama"></div>
+      </div>
+      <div class="llm-stat">Status: <span style="color:var(--text3)" id="ollama-status">STANDBY</span></div>
+      <div class="llm-stat">Latency: <span id="ollama-lat">~3.8s</span></div>
+      <div style="margin-top:0.7rem;display:flex;gap:0.4rem">
+        <button class="btn btn-ghost btn-sm" onclick="failLLM('ollama')">Simulate Failure</button>
+        <button class="btn btn-green btn-sm" onclick="restoreLLM('ollama')">Restore</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-head">
+      <div class="card-title">Agent Prompt Router</div>
+      <div class="badge badge-cyan" id="active-llm-badge">ROUTING → Claude</div>
+    </div>
+    <div class="card-body">
+      <div class="llm-prompt-area">
+        <input type="text" id="llm-prompt" placeholder="Enter a task for the agent... e.g. 'Check ETH balance and summarize'" value="Analyze my ETH wallet activity and identify unusual patterns" />
+        <button class="btn btn-cyan" onclick="runLLM()">▶ Run</button>
+      </div>
+      <div style="font-family:var(--mono);font-size:0.65rem;color:var(--text3);margin-bottom:0.5rem" id="llm-routing-trace">Routing trace will appear here</div>
+      <div class="llm-output" id="llm-output">Response will appear here...</div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-head"><div class="card-title">MCP Tool Connections</div></div>
+    <div class="card-body">
+      <div class="grid-2">
+        <div>
+          <div style="font-family:var(--mono);font-size:0.72rem;color:var(--text2);margin-bottom:0.5rem">Connected MCP Servers</div>
+          <div class="log-box" style="max-height:120px">
+            <div class="log-line"><span class="log-t">mcp</span><span class="log-ok">deepseek-mcp connected · /mcp/sse</span></div>
+            <div class="log-line"><span class="log-t">mcp</span><span class="log-ok">ollama-mcp connected · localhost:11434</span></div>
+            <div class="log-line"><span class="log-t">mcp</span><span class="log-ok">filesystem-mcp connected · /data</span></div>
+            <div class="log-line"><span class="log-t">mcp</span><span class="log-ok">memory-mcp connected · SQLite</span></div>
+          </div>
+        </div>
+        <div>
+          <div style="font-family:var(--mono);font-size:0.72rem;color:var(--text2);margin-bottom:0.5rem">Available Tools</div>
+          <div style="display:flex;flex-wrap:wrap;gap:0.4rem">
+            <span class="badge badge-violet">web_search</span>
+            <span class="badge badge-violet">read_file</span>
+            <span class="badge badge-violet">write_file</span>
+            <span class="badge badge-violet">remember</span>
+            <span class="badge badge-violet">recall</span>
+            <span class="badge badge-violet">eth_balance</span>
+            <span class="badge badge-violet">plaid_accounts</span>
+            <span class="badge badge-violet">run_python</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ══ PAGE: RBAC ══ -->
+<div id="page-rbac" class="page">
+  <div class="page-header">
+    <div class="page-eyebrow">Authorization / RBAC</div>
+    <div class="page-title">Who can do <span>what.</span></div>
+    <div class="page-sub">Three identity types — humans (Auth0 JWT), machines (API keys), agents (agent identities). Every API call checks permissions. Click users to view and toggle their grants.</div>
+  </div>
+
+  <div class="grid-2" style="margin-bottom:1.2rem">
+    <div class="card">
+      <div class="card-head"><div class="card-title">API Endpoint Checker</div></div>
+      <div class="card-body">
+        <div style="margin-bottom:0.75rem">
+          <label>Endpoint</label>
+          <select id="rbac-endpoint">
+            <option value="blockchain:write">POST /api/blockchain/send</option>
+            <option value="blockchain:read">GET /api/blockchain/balance</option>
+            <option value="agent:run">POST /api/agent/run</option>
+            <option value="agent:spawn">POST /api/agent/spawn</option>
+            <option value="banking:transfer">POST /api/banking/transfer</option>
+            <option value="admin:users">GET /api/admin/users</option>
+          </select>
+        </div>
+        <div style="margin-bottom:0.75rem">
+          <label>Identity</label>
+          <select id="rbac-identity">
+            <option value="admin">Alice — Admin</option>
+            <option value="analyst">Bob — Analyst</option>
+            <option value="agent">agent-alpha — Agent</option>
+            <option value="readonly">Carol — Read-Only</option>
+            <option value="apikey">api-key-xyz — Machine</option>
+          </select>
+        </div>
+        <button class="btn btn-cyan" onclick="checkAccess()" style="width:100%">Check Access</button>
+        <div id="rbac-result" style="margin-top:0.8rem;font-family:var(--mono);font-size:0.78rem;display:none;padding:0.7rem;border-radius:3px"></div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-head"><div class="card-title">Create API Key</div></div>
+      <div class="card-body">
+        <div style="margin-bottom:0.75rem">
+          <label>Key Name</label>
+          <input type="text" id="new-key-name" placeholder="e.g. trading-bot-prod" />
+        </div>
+        <div style="margin-bottom:0.75rem">
+          <label>Permissions</label>
+          <div style="display:flex;flex-wrap:wrap;gap:0.4rem;margin-top:4px">
+            <label style="display:flex;align-items:center;gap:4px;font-size:0.72rem;cursor:pointer"><input type="checkbox" checked> blockchain:read</label>
+            <label style="display:flex;align-items:center;gap:4px;font-size:0.72rem;cursor:pointer"><input type="checkbox"> blockchain:write</label>
+            <label style="display:flex;align-items:center;gap:4px;font-size:0.72rem;cursor:pointer"><input type="checkbox" checked> agent:run</label>
+            <label style="display:flex;align-items:center;gap:4px;font-size:0.72rem;cursor:pointer"><input type="checkbox"> banking:read</label>
+          </div>
+        </div>
+        <button class="btn btn-violet" onclick="createKey()" style="width:100%">Generate API Key</button>
+        <div id="new-key-display" style="display:none;margin-top:0.8rem;font-family:var(--mono);font-size:0.68rem;background:var(--bg);border:1px solid var(--border);padding:0.7rem;border-radius:3px;word-break:break-all;color:var(--green)"></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="rbac-layout">
+    <div class="rbac-sidebar">
+      <div class="rbac-sb-title">IDENTITIES</div>
+      <div class="rbac-user active" onclick="selectUser('admin',this)">
+        <div class="rbac-av" style="background:#7c3aed">A</div>
+        <div class="rbac-uinfo"><div class="rbac-uname">Alice</div><div class="rbac-urole">ADMIN · human</div></div>
+      </div>
+      <div class="rbac-user" onclick="selectUser('analyst',this)">
+        <div class="rbac-av" style="background:#0891b2">B</div>
+        <div class="rbac-uinfo"><div class="rbac-uname">Bob</div><div class="rbac-urole">ANALYST · human</div></div>
+      </div>
+      <div class="rbac-user" onclick="selectUser('agent',this)">
+        <div class="rbac-av" style="background:#059669">α</div>
+        <div class="rbac-uinfo"><div class="rbac-uname">agent-alpha</div><div class="rbac-urole">AGENT · bot</div></div>
+      </div>
+      <div class="rbac-user" onclick="selectUser('readonly',this)">
+        <div class="rbac-av" style="background:#b45309">C</div>
+        <div class="rbac-uinfo"><div class="rbac-uname">Carol</div><div class="rbac-urole">READ-ONLY · human</div></div>
+      </div>
+      <div class="rbac-user" onclick="selectUser('apikey',this)">
+        <div class="rbac-av" style="background:#374151">🔑</div>
+        <div class="rbac-uinfo"><div class="rbac-uname">api-key-xyz</div><div class="rbac-urole">MACHINE · apikey</div></div>
+      </div>
+    </div>
+    <div class="rbac-main">
+      <div class="rbac-main-title" id="rbac-user-title">Alice</div>
+      <div class="rbac-main-sub" id="rbac-user-sub">Role: Admin · Auth0 JWT · Full access</div>
+      <div class="perm-grid" id="rbac-perm-grid"></div>
+      <div style="display:flex;gap:0.5rem">
+        <button class="btn btn-ghost btn-sm" onclick="grantAll()">Grant All</button>
+        <button class="btn btn-red btn-sm" onclick="revokeAll()">Revoke All</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ══ PAGE: BLOCKCHAIN ══ -->
+<div id="page-blockchain" class="page">
+  <div class="page-header">
+    <div class="page-eyebrow">Blockchain / Crypto</div>
+    <div class="page-title">ETH wallet. <span>Agent-controlled.</span></div>
+    <div class="page-sub">Ethereum wallet management via ethers.js v6 + Alchemy. Agents can read balance, check gas, and send ETH — but sends require HITL approval first.</div>
+  </div>
+
+  <div class="gas-indicator">
+    <div class="gas-item"><div class="gas-label">SLOW GAS</div><div class="gas-val" id="gas-slow">12 gwei</div></div>
+    <div class="gas-item"><div class="gas-label">STANDARD</div><div class="gas-val" id="gas-std">18 gwei</div></div>
+    <div class="gas-item"><div class="gas-label">FAST</div><div class="gas-val" id="gas-fast">28 gwei</div></div>
+    <div class="gas-item"><div class="gas-label">NETWORK</div><div class="gas-val" style="color:var(--green)">Ethereum</div></div>
+    <div class="gas-item"><div class="gas-label">BLOCK</div><div class="gas-val" id="block-num">19,847,221</div></div>
+    <button class="btn btn-ghost btn-sm" style="margin-left:auto" onclick="refreshGas()">↻ Refresh</button>
+  </div>
+
+  <div class="wallet-hero">
+    <div class="wallet-label">AGENT WALLET ADDRESS</div>
+    <div class="wallet-address" id="wallet-addr">0x742d35Cc6634C0532925a3b8D4C9b6e2F4C8F4e2</div>
+    <div class="wallet-balance" id="wallet-bal">4.2847 ETH</div>
+    <div class="wallet-usd" id="wallet-usd">≈ $13,641.22 USD</div>
+    <div class="wallet-actions">
+      <button class="btn btn-cyan" onclick="openSendForm()">↑ Send ETH</button>
+      <button class="btn btn-ghost" onclick="createWallet()">+ New Wallet</button>
+      <button class="btn btn-ghost" onclick="refreshBalance()">↻ Balance</button>
+    </div>
+  </div>
+
+  <div class="card" id="send-form-card" style="display:none">
+    <div class="card-head"><div class="card-title">Send ETH — Requires HITL Approval</div><div class="badge badge-amber">HITL GATED</div></div>
+    <div class="card-body">
+      <div class="send-form">
+        <div>
+          <label>To Address</label>
+          <input type="text" id="eth-to" placeholder="0x..." value="0x3fC91A3afd70395Cd496C647d5a6CC9D4B2b7FAD" />
+        </div>
+        <div>
+          <label>Amount (ETH)</label>
+          <input type="number" id="eth-amount" placeholder="0.0" value="0.1" step="0.01" />
+        </div>
+        <div class="send-form-full" style="display:flex;gap:0.75rem">
+          <button class="btn btn-amber" style="background:var(--amber);color:#07090f" onclick="submitSend()">Submit for Approval →</button>
+          <button class="btn btn-ghost" onclick="document.getElementById('send-form-card').style.display='none'">Cancel</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-head"><div class="card-title">Transaction History</div><div class="badge badge-cyan" id="tx-count">7 transactions</div></div>
+    <div class="card-body" style="padding:0">
+      <div class="tx-table">
+        <div class="tx-thead"><span>TX HASH</span><span>FROM/TO</span><span>AMOUNT</span><span>STATUS</span></div>
+        <div id="tx-list"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ══ PAGE: BANKING ══ -->
+<div id="page-banking" class="page">
+  <div class="page-header">
+    <div class="page-eyebrow">Banking — Plaid + Stripe</div>
+    <div class="page-title">Read balance. <span>Send payments.</span></div>
+    <div class="page-sub">Plaid reads your bank accounts and transactions. Stripe initiates payments. All transfers are HITL-gated — the agent requests, you approve via Telegram.</div>
+  </div>
+
+  <div class="bank-accounts">
+    <div class="bank-account">
+      <div class="bank-acct-type">PLAID · CHECKING</div>
+      <div class="bank-acct-name">Chase Business Checking</div>
+      <div class="bank-acct-bal">$24,839.47</div>
+      <div class="bank-acct-num">Account ••••8821</div>
+    </div>
+    <div class="bank-account">
+      <div class="bank-acct-type">PLAID · SAVINGS</div>
+      <div class="bank-acct-name">Chase Business Savings</div>
+      <div class="bank-acct-bal">$102,441.00</div>
+      <div class="bank-acct-num">Account ••••4490</div>
+    </div>
+  </div>
+
+  <div class="grid-2">
+    <div class="card">
+      <div class="card-head"><div class="card-title">Recent Transactions — Plaid</div></div>
+      <div class="card-body" style="padding:0">
+        <div class="log-box" style="border:none;border-radius:0;max-height:220px;font-size:0.72rem">
+          <div class="log-line"><span class="log-t">Jan 15</span><span class="log-ok">+$8,500.00 — Client payment ACH</span></div>
+          <div class="log-line"><span class="log-t">Jan 14</span><span class="log-err">-$2,100.00 — AWS invoice</span></div>
+          <div class="log-line"><span class="log-t">Jan 13</span><span class="log-err">-$450.00 — Anthropic API</span></div>
+          <div class="log-line"><span class="log-t">Jan 12</span><span class="log-ok">+$12,000.00 — Client retainer</span></div>
+          <div class="log-line"><span class="log-t">Jan 11</span><span class="log-err">-$890.00 — Server hosting</span></div>
+          <div class="log-line"><span class="log-t">Jan 10</span><span class="log-err">-$299.00 — Auth0 plan</span></div>
+          <div class="log-line"><span class="log-t">Jan 9</span><span class="log-ok">+$3,200.00 — Consulting invoice</span></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-head"><div class="card-title">Stripe Payment</div><div class="badge badge-amber">HITL GATED</div></div>
+      <div class="card-body">
+        <div class="stripe-form">
+          <div>
+            <label>Amount (USD)</label>
+            <input type="number" id="stripe-amount" value="500" placeholder="0.00" />
+          </div>
+          <div>
+            <label>Currency</label>
+            <select id="stripe-currency">
+              <option>USD</option><option>EUR</option><option>GBP</option>
+            </select>
+          </div>
+          <div class="stripe-form-full">
+            <label>Recipient / Description</label>
+            <input type="text" id="stripe-desc" value="Invoice #INV-2024-0042 — Contractor payment" />
+          </div>
+          <div class="stripe-form-full">
+            <label>Payment Method</label>
+            <select>
+              <option>card_1234 — Visa ••••4242</option>
+              <option>bank_acct ••••8821 — ACH</option>
+            </select>
+          </div>
+          <div class="stripe-form-full">
+            <button class="btn btn-amber" style="background:var(--amber);color:#07090f;width:100%" onclick="submitStripe()">
+              Submit for HITL Approval →
+            </button>
+          </div>
+        </div>
+        <div id="stripe-result" style="display:none;margin-top:0.8rem"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ══ PAGE: AGENT SPAWNING ══ -->
+<div id="page-agents" class="page">
+  <div class="page-header">
+    <div class="page-eyebrow">Agent Spawning</div>
+    <div class="page-title">One agent. <span>Many agents.</span></div>
+    <div class="page-sub">The master agent spawns sub-agents for parallel tasks. Sub-agents communicate via A2A message bus, coordinate, and report back. Memory persists in SQLite.</div>
+  </div>
+
+  <div class="grid-2">
+    <div>
+      <div class="card">
+        <div class="card-head"><div class="card-title">Spawn Sub-Agent</div><div class="badge badge-amber">HITL GATED</div></div>
+        <div class="card-body">
+          <div style="margin-bottom:0.75rem">
+            <label>Agent Role</label>
+            <select id="spawn-role">
+              <option value="data-collector">Data Collector</option>
+              <option value="trading-bot">Trading Bot</option>
+              <option value="report-writer">Report Writer</option>
+              <option value="api-monitor">API Monitor</option>
+              <option value="task-executor">Task Executor</option>
+            </select>
+          </div>
+          <div style="margin-bottom:0.75rem">
+            <label>Task / Instructions</label>
+            <textarea id="spawn-task" rows="2" style="resize:none">Monitor ETH gas prices and alert if below 10 gwei</textarea>
+          </div>
+          <div style="margin-bottom:0.75rem">
+            <label>LLM Override</label>
+            <select id="spawn-llm">
+              <option>Auto (system default)</option>
+              <option>Claude Sonnet</option>
+              <option>DeepSeek API</option>
+              <option>Ollama local</option>
+            </select>
+          </div>
+          <button class="btn btn-violet" onclick="spawnAgent()" style="width:100%">🤖 Spawn Agent</button>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-head"><div class="card-title">A2A Message Bus</div></div>
+        <div class="card-body" style="padding:0">
+          <div class="a2a-feed" id="a2a-feed">
+            <div class="a2a-msg"><span class="a2a-from">master</span><span class="a2a-arrow">→</span><span class="a2a-to">system</span><span class="a2a-content">A2A bus initialized</span></div>
+          </div>
+          <div style="padding:0.8rem;border-top:1px solid var(--border);display:flex;gap:0.5rem">
+            <input type="text" id="a2a-msg-input" placeholder="Broadcast message to all agents..." style="flex:1;font-size:0.72rem" />
+            <button class="btn btn-ghost btn-sm" onclick="broadcastMsg()">Send</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div>
+      <div style="margin-bottom:0.5rem;font-family:var(--mono);font-size:0.65rem;color:var(--text3);letter-spacing:0.1em">AGENT NETWORK MAP</div>
+      <div class="agent-canvas" id="agent-canvas">
+        <div class="agent-node master" style="left:50%;top:50%;transform:translate(-50%,-50%)" id="node-master">
+          <div class="agent-node-role">MASTER AGENT</div>
+          <div class="agent-node-name">VaultAgent</div>
+          <div class="agent-node-status" style="color:var(--cyan)">● orchestrating</div>
+        </div>
+      </div>
+      <div style="display:flex;gap:0.5rem;margin-top:0.5rem">
+        <button class="btn btn-ghost btn-sm" onclick="clearAgents()">Clear Network</button>
+        <button class="btn btn-ghost btn-sm" onclick="autoSpawnDemo()">Auto Demo</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ══ PAGE: AUDIT ══ -->
+<div id="page-audit" class="page">
+  <div class="page-header">
+    <div class="page-eyebrow">Tamper-Evident Audit Logs</div>
+    <div class="page-title">Every action. <span>Forever.</span></div>
+    <div class="page-sub">Every event creates a chained SHA-256 log entry. Each entry hashes the previous entry's hash — making tampering immediately detectable. Try tampering with a log entry to see the chain break.</div>
+  </div>
+
+  <div class="card">
+    <div class="card-head">
+      <div class="card-title">SHA-256 Hash Chain</div>
+      <div style="display:flex;gap:0.5rem;align-items:center">
+        <div class="badge badge-green" id="chain-status-badge">✓ CHAIN INTACT</div>
+        <button class="btn btn-ghost btn-sm" onclick="verifyChain()">Verify Chain</button>
+        <button class="btn btn-ghost btn-sm" onclick="addLogEntry()">+ Add Entry</button>
+      </div>
+    </div>
+    <div class="card-body">
+      <div class="tamper-alert" id="tamper-alert">
+        ⚠️ CHAIN INTEGRITY VIOLATION — Entry #<span id="tamper-entry">?</span> hash mismatch detected. Audit trail compromised.
+      </div>
+      <div class="chain-visual" id="chain-visual"></div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-head">
+      <div class="card-title">Audit Log</div>
+      <div style="display:flex;gap:0.5rem">
+        <input type="text" placeholder="Filter by actor or action..." id="audit-filter" style="width:200px;font-size:0.7rem;padding:5px 10px" oninput="filterAudit()" />
+        <button class="btn btn-ghost btn-sm" onclick="exportAudit()">Export CSV</button>
+      </div>
+    </div>
+    <div class="card-body" style="padding:0">
+      <div class="audit-table">
+        <div class="audit-thead"><span>TIMESTAMP</span><span>ACTOR</span><span>ACTION</span><span>ENTRY HASH</span></div>
+        <div id="audit-rows"></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="grid-2" style="margin-top:1.2rem">
+    <div class="card">
+      <div class="card-head"><div class="card-title">Tamper Simulation</div></div>
+      <div class="card-body">
+        <div style="margin-bottom:0.75rem;font-size:0.82rem;color:var(--text2)">Select an entry to modify — watch the chain break.</div>
+        <div style="margin-bottom:0.75rem">
+          <label>Target Entry</label>
+          <select id="tamper-target">
+            <option value="2">Entry #2 — agent:run</option>
+            <option value="3">Entry #3 — blockchain:send</option>
+            <option value="4">Entry #4 — hitl:approved</option>
+          </select>
+        </div>
+        <div style="display:flex;gap:0.5rem">
+          <button class="btn btn-red" onclick="tamperEntry()">☠ Tamper Entry</button>
+          <button class="btn btn-ghost" onclick="resetChain()">↩ Reset Chain</button>
+        </div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-head"><div class="card-title">Chain Stats</div></div>
+      <div class="card-body">
+        <div class="grid-2">
+          <div style="text-align:center;padding:0.75rem;background:var(--bg2);border-radius:3px">
+            <div style="font-family:var(--serif);font-size:1.8rem;color:var(--cyan)" id="chain-depth">8</div>
+            <div style="font-family:var(--mono);font-size:0.62rem;color:var(--text3)">ENTRIES</div>
+          </div>
+          <div style="text-align:center;padding:0.75rem;background:var(--bg2);border-radius:3px">
+            <div style="font-family:var(--serif);font-size:1.8rem;color:var(--green)">SHA-256</div>
+            <div style="font-family:var(--mono);font-size:0.62rem;color:var(--text3)">ALGORITHM</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+</div><!-- end #main -->
+
+<script>
+// ════════════════════════════════════════
+// NAVIGATION
+// ════════════════════════════════════════
+function showPage(id) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.sb-link').forEach(l => l.classList.remove('active'));
+  document.getElementById('page-' + id).classList.add('active');
+  const links = document.querySelectorAll('.sb-link');
+  links.forEach(l => { if(l.getAttribute('onclick') && l.getAttribute('onclick').includes("'"+id+"'")) l.classList.add('active'); });
+  document.getElementById('main').scrollTop = 0;
+  if(id === 'blockchain') initBlockchain();
+  if(id === 'audit') initAudit();
+  if(id === 'rbac') initRBAC();
+}
+
+// ════════════════════════════════════════
+// HITL DEMO
+// ════════════════════════════════════════
+let hitlPending = 0;
+let hitlMsgId = 0;
+
+function now() {
+  return new Date().toLocaleTimeString('en-US',{hour12:false});
+}
+function addLog(el, msg, cls='') {
+  const box = document.getElementById(el);
+  const line = document.createElement('div');
+  line.className = 'log-line';
+  line.innerHTML = `<span class="log-t">${now()}</span><span class="log-m ${cls}">${msg}</span>`;
+  box.appendChild(line);
+  box.scrollTop = box.scrollHeight;
+}
+
+function triggerHITL() {
+  const type = document.getElementById('hitl-type').value;
+  const amount = document.getElementById('hitl-amount').value;
+  const agent = document.getElementById('hitl-agent').value;
+  hitlMsgId++;
+  const id = hitlMsgId;
+  hitlPending++;
+  document.getElementById('hitl-pending-count').textContent = hitlPending + ' PENDING';
+  addLog('hitl-log', `Agent action requested: ${type}`, 'warn');
+  addLog('hitl-log', `Blocking execution — awaiting HITL approval`, 'info');
+
+  const labels = {
+    'eth-send':'💰 ETH Transfer Request',
+    'stripe':'💳 Stripe Payment Request',
+    'plaid-transfer':'🏦 Bank Transfer Request',
+    'spawn-agent':'🤖 Agent Spawn Request',
+    'defi-swap':'🔄 DeFi Swap Request'
+  };
+  const tgBody = document.getElementById('tg-body');
+  const msgEl = document.createElement('div');
+  msgEl.className = 'tg-msg';
+  msgEl.id = 'tg-msg-' + id;
+  msgEl.innerHTML = `
+    <div class="tg-msg-head">⚠️ ${labels[type]||type}</div>
+    <div class="tg-msg-body">Agent <strong>${agent.split(' ')[0]}</strong> wants to execute:<br><strong>${amount}</strong></div>
+    <div class="tg-msg-detail">ID: REQ-${String(id).padStart(4,'0')} · ${now()}</div>
+    <div class="tg-btns">
+      <div class="tg-btn tg-btn-approve" onclick="approveHITL(${id})">✅ Approve</div>
+      <div class="tg-btn tg-btn-reject" onclick="rejectHITL(${id})">❌ Reject</div>
+    </div>
+  `;
+  tgBody.appendChild(msgEl);
+  tgBody.scrollTop = tgBody.scrollHeight;
+}
+
+function approveHITL(id) {
+  const el = document.getElementById('tg-msg-' + id);
+  if(!el) return;
+  el.style.opacity = '0.5';
+  el.querySelector('.tg-btns').innerHTML = '<div style="color:#00e676;font-size:0.75rem;font-weight:700;padding:4px">✅ APPROVED — Executing...</div>';
+  hitlPending = Math.max(0, hitlPending-1);
+  document.getElementById('hitl-pending-count').textContent = hitlPending + ' PENDING';
+  addLog('hitl-log', `REQ-${String(id).padStart(4,'0')} APPROVED by human`, 'ok');
+  addLog('hitl-log', `Execution proceeding + audit log written`, 'ok');
+}
+function rejectHITL(id) {
+  const el = document.getElementById('tg-msg-' + id);
+  if(!el) return;
+  el.style.opacity = '0.5';
+  el.querySelector('.tg-btns').innerHTML = '<div style="color:#ff3d57;font-size:0.75rem;font-weight:700;padding:4px">❌ REJECTED — Action cancelled</div>';
+  hitlPending = Math.max(0, hitlPending-1);
+  document.getElementById('hitl-pending-count').textContent = hitlPending + ' PENDING';
+  addLog('hitl-log', `REQ-${String(id).padStart(4,'0')} REJECTED by human`, 'err');
+  addLog('hitl-log', `Action cancelled — audit log written`, 'warn');
+}
+
+// ════════════════════════════════════════
+// MULTI-LLM DEMO
+// ════════════════════════════════════════
+const llmState = { claude: true, deepseek: false, ollama: false };
+const llmFailed = { claude: false, deepseek: false, ollama: false };
+
+function failLLM(model) {
+  llmFailed[model] = true;
+  const card = document.getElementById('llm-' + model);
+  card.className = 'llm-card inactive';
+  const ind = document.getElementById('ind-' + model);
+  ind.className = 'llm-indicator ind-standby';
+  if(model === 'deepseek') document.getElementById('deepseek-status').textContent = 'FAILED';
+  if(model === 'ollama') document.getElementById('ollama-status').textContent = 'FAILED';
+  updateActiveLLM();
+}
+function restoreLLM(model) {
+  llmFailed[model] = false;
+  updateActiveLLM();
+}
+function updateActiveLLM() {
+  // Reset all
+  ['claude','deepseek','ollama'].forEach(m => {
+    const card = document.getElementById('llm-' + m);
+    const ind = document.getElementById('ind-' + m);
+    if(llmFailed[m]) {
+      card.className = 'llm-card inactive';
+      ind.className = 'llm-indicator ind-standby';
+    } else {
+      card.className = 'llm-card inactive';
+      ind.className = 'llm-indicator ind-standby';
+    }
+  });
+  let active = null;
+  if(!llmFailed.claude) { active = 'claude'; }
+  else if(!llmFailed.deepseek) { active = 'deepseek'; }
+  else if(!llmFailed.ollama) { active = 'ollama'; }
+
+  if(active) {
+    document.getElementById('llm-' + active).className = 'llm-card active';
+    document.getElementById('ind-' + active).className = 'llm-indicator ind-on';
+    if(active === 'deepseek') document.getElementById('deepseek-status').textContent = 'ACTIVE';
+    if(active === 'ollama') document.getElementById('ollama-status').textContent = 'ACTIVE';
+    const names = {claude:'Claude',deepseek:'DeepSeek',ollama:'Ollama'};
+    document.getElementById('active-llm-badge').textContent = 'ROUTING → ' + names[active];
+  } else {
+    document.getElementById('active-llm-badge').textContent = 'ALL PROVIDERS FAILED';
+  }
+}
+function getActiveLLM() {
+  if(!llmFailed.claude) return 'claude';
+  if(!llmFailed.deepseek) return 'deepseek';
+  if(!llmFailed.ollama) return 'ollama';
+  return null;
+}
+
+const llmResponses = {
+  claude: [
+    "Analyzing your ETH wallet activity...\n\nI've reviewed 47 transactions over the last 30 days. Key findings:\n\n• 3 unusually large outflows (>1 ETH) detected on Jan 8, 12, 19\n• Recurring DeFi interaction with Uniswap every Tuesday (~0.05 ETH)\n• Gas costs averaged 18 gwei — 23% above monthly baseline\n• No suspicious recipient addresses flagged\n\nRecommendation: Review Jan 8 outflow of 2.1 ETH to 0x4a2b... — this address has no prior history.",
+    "Task received. Running multi-step analysis...\n\nStep 1: Fetched balance via Alchemy ✓\nStep 2: Retrieved 90-day transaction history ✓\nStep 3: Pattern analysis complete ✓\n\nResult: Wallet appears healthy. One anomaly — 3 failed transactions on Jan 14 suggesting gas limit too low. Recommend increasing gas buffer by 20%.",
+  ],
+  deepseek: [
+    "[Routing: Claude failed → DeepSeek API]\n\nAnalysis via DeepSeek-V3...\n\nETH wallet summary:\n• Current balance: 4.2847 ETH\n• 30-day net flow: -0.84 ETH (net outflow)\n• Most active hours: 14:00-16:00 UTC\n• Top interaction: Uniswap V3 (67% of tx volume)\n\nNo critical anomalies detected. Suggest setting up balance alerts for <2 ETH threshold.",
+  ],
+  ollama: [
+    "[Routing: Claude failed → DeepSeek failed → Ollama local]\n[Running llama3.1:8b locally — air-gapped mode]\n\nAnalysis complete (local model).\n\nWallet activity appears normal based on historical baseline. Running locally ensures no data leaves your infrastructure. For deeper pattern analysis, recommend restoring API providers.",
+  ]
+};
+
+function runLLM() {
+  const prompt = document.getElementById('llm-prompt').value;
+  if(!prompt.trim()) return;
+  const active = getActiveLLM();
+  const output = document.getElementById('llm-output');
+  const trace = document.getElementById('llm-routing-trace');
+
+  if(!active) {
+    output.textContent = 'ERROR: All LLM providers failed. No response available.';
+    output.style.color = 'var(--red)';
+    return;
+  }
+
+  let traceMsg = '';
+  if(llmFailed.claude && !llmFailed.deepseek) traceMsg = 'Claude failed → routing to DeepSeek API';
+  else if(llmFailed.claude && llmFailed.deepseek) traceMsg = 'Claude failed → DeepSeek failed → routing to Ollama local';
+  else traceMsg = 'Routing to Claude Sonnet (primary)';
+  trace.textContent = '→ ' + traceMsg;
+
+  output.style.color = 'var(--cyan)';
+  output.textContent = '▋ Thinking...';
+
+  const responses = llmResponses[active];
+  const resp = responses[Math.floor(Math.random()*responses.length)];
+  let i = 0;
+  const text = resp;
+  output.textContent = '';
+  output.style.color = 'var(--text)';
+
+  const interval = setInterval(() => {
+    if(i < text.length) {
+      output.textContent += text[i];
+      i++;
+      output.scrollTop = output.scrollHeight;
+    } else {
+      clearInterval(interval);
+    }
+  }, 12);
+}
+
+// ════════════════════════════════════════
+// RBAC DEMO
+// ════════════════════════════════════════
+const rbacPerms = {
+  admin: ['blockchain:read','blockchain:write','agent:run','agent:spawn','banking:read','banking:transfer','admin:users','admin:permissions','mcp:connect','keys:manage'],
+  analyst: ['blockchain:read','agent:run','banking:read','mcp:connect'],
+  agent: ['blockchain:read','blockchain:write','agent:run','banking:read'],
+  readonly: ['blockchain:read','banking:read'],
+  apikey: ['blockchain:read','agent:run']
+};
+const rbacMeta = {
+  admin: {name:'Alice', sub:'Role: Admin · Auth0 JWT · Full access'},
+  analyst: {name:'Bob', sub:'Role: Analyst · Auth0 JWT · Limited write'},
+  agent: {name:'agent-alpha', sub:'Role: Agent · Agent Identity · Execution scope'},
+  readonly: {name:'Carol', sub:'Role: Read-Only · Auth0 JWT · No mutations'},
+  apikey: {name:'api-key-xyz', sub:'Role: Machine · API Key · Scoped access'}
+};
+const allPerms = ['blockchain:read','blockchain:write','agent:run','agent:spawn','banking:read','banking:transfer','admin:users','admin:permissions','mcp:connect','keys:manage'];
+let currentUser = 'admin';
+
+function initRBAC() { renderPermissions(); }
+
+function renderPermissions() {
+  const grid = document.getElementById('rbac-perm-grid');
+  const meta = rbacMeta[currentUser];
+  document.getElementById('rbac-user-title').textContent = meta.name;
+  document.getElementById('rbac-user-sub').textContent = meta.sub;
+  grid.innerHTML = '';
+  allPerms.forEach(p => {
+    const granted = rbacPerms[currentUser].includes(p);
+    const el = document.createElement('div');
+    el.className = 'perm-item ' + (granted ? 'granted' : 'denied');
+    el.innerHTML = `<span class="perm-icon">${granted ? '✓' : '✗'}</span>${p}`;
+    el.onclick = () => togglePerm(p, el);
+    grid.appendChild(el);
+  });
+}
+function togglePerm(p, el) {
+  const idx = rbacPerms[currentUser].indexOf(p);
+  if(idx >= 0) { rbacPerms[currentUser].splice(idx,1); el.className='perm-item denied'; el.querySelector('.perm-icon').textContent='✗'; }
+  else { rbacPerms[currentUser].push(p); el.className='perm-item granted'; el.querySelector('.perm-icon').textContent='✓'; }
+}
+function selectUser(u, el) {
+  document.querySelectorAll('.rbac-user').forEach(x => x.classList.remove('active'));
+  el.classList.add('active');
+  currentUser = u;
+  renderPermissions();
+}
+function grantAll() { rbacPerms[currentUser] = [...allPerms]; renderPermissions(); }
+function revokeAll() { rbacPerms[currentUser] = []; renderPermissions(); }
+
+const accessMatrix = {
+  admin: { 'blockchain:write':true,'blockchain:read':true,'agent:run':true,'agent:spawn':true,'banking:transfer':true,'admin:users':true },
+  analyst: { 'blockchain:write':false,'blockchain:read':true,'agent:run':true,'agent:spawn':false,'banking:transfer':false,'admin:users':false },
+  agent: { 'blockchain:write':true,'blockchain:read':true,'agent:run':true,'agent:spawn':false,'banking:transfer':false,'admin:users':false },
+  readonly: { 'blockchain:write':false,'blockchain:read':true,'agent:run':false,'agent:spawn':false,'banking:transfer':false,'admin:users':false },
+  apikey: { 'blockchain:write':false,'blockchain:read':true,'agent:run':true,'agent:spawn':false,'banking:transfer':false,'admin:users':false }
+};
+function checkAccess() {
+  const ep = document.getElementById('rbac-endpoint').value;
+  const identity = document.getElementById('rbac-identity').value;
+  const result = document.getElementById('rbac-result');
+  const granted = accessMatrix[identity] && accessMatrix[identity][ep];
+  result.style.display = 'block';
+  result.style.background = granted ? 'var(--green-dim)' : 'var(--red-dim)';
+  result.style.border = granted ? '1px solid rgba(0,230,118,0.3)' : '1px solid rgba(255,61,87,0.3)';
+  result.style.color = granted ? 'var(--green)' : 'var(--red)';
+  result.innerHTML = granted
+    ? `✓ ACCESS GRANTED\nIdentity "${identity}" has permission "${ep}"`
+    : `✗ ACCESS DENIED\nIdentity "${identity}" lacks permission "${ep}"\n→ HTTP 403 Forbidden`;
+}
+function createKey() {
+  const name = document.getElementById('new-key-name').value || 'unnamed-key';
+  const key = 'va_' + Array.from({length:32},()=>'abcdefghijklmnopqrstuvwxyz0123456789'[Math.floor(Math.random()*36)]).join('');
+  const disp = document.getElementById('new-key-display');
+  disp.style.display = 'block';
+  disp.textContent = '🔑 ' + key + '\n\nStore this now — it will not be shown again.';
+}
+
+// ════════════════════════════════════════
+// BLOCKCHAIN DEMO
+// ════════════════════════════════════════
+const sampleTxs = [
+  {hash:'0x4a2b...f91c',from:'0x742d...F4e2',amt:'+0.5 ETH',status:'confirmed'},
+  {hash:'0x88cc...2d1a',from:'0xd3F4...9Aa1',amt:'-0.1 ETH',status:'confirmed'},
+  {hash:'0x19fe...77bb',from:'0x742d...F4e2',amt:'+2.0 ETH',status:'confirmed'},
+  {hash:'0xcb3a...118e',from:'0x742d...F4e2',amt:'-0.05 ETH',status:'confirmed'},
+  {hash:'0x5511...f004',from:'0xUni...swap',amt:'+0.88 ETH',status:'confirmed'},
+  {hash:'0xab90...cc12',from:'0x742d...F4e2',amt:'-1.2 ETH',status:'pending'},
+  {hash:'0x3344...8f0a',from:'0xAave...V3',amt:'+0.02 ETH',status:'confirmed'},
+];
+function initBlockchain() {
+  const list = document.getElementById('tx-list');
+  list.innerHTML = '';
+  sampleTxs.forEach(tx => {
+    const row = document.createElement('div');
+    row.className = 'tx-row';
+    const isIn = tx.amt.startsWith('+');
+    const statusBadge = tx.status === 'confirmed'
+      ? '<span class="badge badge-green">confirmed</span>'
+      : '<span class="badge badge-amber">pending</span>';
+    row.innerHTML = `<span class="tx-hash">${tx.hash}</span><span class="tx-from">${tx.from}</span><span class="${isIn?'amt-in':'amt-out'}">${tx.amt}</span>${statusBadge}`;
+    list.appendChild(row);
+  });
+  document.getElementById('tx-count').textContent = sampleTxs.length + ' transactions';
+}
+function refreshGas() {
+  document.getElementById('gas-slow').textContent = Math.floor(Math.random()*6+8) + ' gwei';
+  document.getElementById('gas-std').textContent = Math.floor(Math.random()*8+14) + ' gwei';
+  document.getElementById('gas-fast').textContent = Math.floor(Math.random()*12+22) + ' gwei';
+  document.getElementById('block-num').textContent = (19847221 + Math.floor(Math.random()*10)).toLocaleString();
+}
+function refreshBalance() {
+  const eth = (Math.random()*2 + 3).toFixed(4);
+  const usd = (parseFloat(eth)*3184.22).toFixed(2);
+  document.getElementById('wallet-bal').textContent = eth + ' ETH';
+  document.getElementById('wallet-usd').textContent = '≈ $' + parseFloat(usd).toLocaleString() + ' USD';
+}
+function openSendForm() {
+  const card = document.getElementById('send-form-card');
+  card.style.display = card.style.display === 'none' ? 'block' : 'none';
+}
+function createWallet() {
+  const chars = '0123456789abcdef';
+  const addr = '0x' + Array.from({length:40},()=>chars[Math.floor(Math.random()*16)]).join('');
+  document.getElementById('wallet-addr').textContent = addr;
+  document.getElementById('wallet-bal').textContent = '0.0000 ETH';
+  document.getElementById('wallet-usd').textContent = '≈ $0.00 USD';
+}
+function submitSend() {
+  const to = document.getElementById('eth-to').value;
+  const amt = document.getElementById('eth-amount').value;
+  document.getElementById('send-form-card').style.display = 'none';
+  // Trigger HITL
+  document.getElementById('hitl-amount').value = `${amt} ETH → ${to.substring(0,10)}...`;
+  document.getElementById('hitl-type').value = 'eth-send';
+  showPage('hitl');
+  setTimeout(triggerHITL, 500);
+}
+
+// ════════════════════════════════════════
+// BANKING DEMO
+// ════════════════════════════════════════
+function submitStripe() {
+  const amount = document.getElementById('stripe-amount').value;
+  const desc = document.getElementById('stripe-desc').value;
+  const result = document.getElementById('stripe-result');
+  result.style.display = 'block';
+  result.innerHTML = `<div class="badge badge-amber" style="font-size:0.75rem;padding:6px 12px">⏳ Awaiting HITL approval for $${amount} payment — check Telegram</div>`;
+  // Route to HITL
+  setTimeout(() => {
+    document.getElementById('hitl-amount').value = `$${amount} — ${desc}`;
+    document.getElementById('hitl-type').value = 'stripe';
+    showPage('hitl');
+    setTimeout(triggerHITL, 300);
+  }, 1000);
+}
+
+// ════════════════════════════════════════
+// AGENT SPAWNING DEMO
+// ════════════════════════════════════════
+let agentCount = 0;
+const agentPositions = [
+  {left:'15%',top:'20%'},{left:'75%',top:'20%'},
+  {left:'15%',top:'70%'},{left:'75%',top:'70%'},
+  {left:'45%',top:'15%'},{left:'45%',top:'78%'},
+];
+const roleColors = {
+  'data-collector':'#00d4ff','trading-bot':'#ffab00',
+  'report-writer':'#8b5cf6','api-monitor':'#00e676','task-executor':'#ff3d57'
+};
+
+function spawnAgent() {
+  const role = document.getElementById('spawn-role').value;
+  const task = document.getElementById('spawn-task').value;
+  if(agentCount >= 6) { addA2A('master','system','Max agents reached — terminate one first'); return; }
+  const pos = agentPositions[agentCount];
+  agentCount++;
+  const id = 'agent-' + String(agentCount).padStart(2,'0');
+  const color = roleColors[role]||'#8b5cf6';
+  const canvas = document.getElementById('agent-canvas');
+  const node = document.createElement('div');
+  node.className = 'agent-node spawning active';
+  node.id = 'node-' + id;
+  node.style.left = pos.left;
+  node.style.top = pos.top;
+  node.style.borderColor = color;
+  node.style.background = color + '15';
+  node.innerHTML = `<div class="agent-node-role">${role.toUpperCase()}</div><div class="agent-node-name">${id}</div><div class="agent-node-status" style="color:${color}">● running</div>`;
+  canvas.appendChild(node);
+  addA2A('master', id, 'spawn(' + role + ')');
+  setTimeout(() => addA2A(id, 'master', 'ready · ' + task.substring(0,30) + '...'), 800);
+  setTimeout(() => addA2A(id, 'master', 'task started — reporting intervals 30s'), 1600);
+}
+
+function addA2A(from, to, content) {
+  const feed = document.getElementById('a2a-feed');
+  const el = document.createElement('div');
+  el.className = 'a2a-msg';
+  el.innerHTML = `<span class="a2a-from">${from}</span><span class="a2a-arrow">→</span><span class="a2a-to">${to}</span><span class="a2a-content">${content}</span>`;
+  feed.appendChild(el);
+  feed.scrollTop = feed.scrollHeight;
+}
+function broadcastMsg() {
+  const input = document.getElementById('a2a-msg-input');
+  const msg = input.value.trim();
+  if(!msg) return;
+  addA2A('master','[broadcast]', msg);
+  input.value = '';
+}
+function clearAgents() {
+  const canvas = document.getElementById('agent-canvas');
+  canvas.querySelectorAll('.agent-node:not(#node-master)').forEach(n => n.remove());
+  agentCount = 0;
+  document.getElementById('a2a-feed').innerHTML = '<div class="a2a-msg"><span class="a2a-from">master</span><span class="a2a-arrow">→</span><span class="a2a-to">system</span><span class="a2a-content">network cleared</span></div>';
+}
+function autoSpawnDemo() {
+  clearAgents();
+  const roles = ['data-collector','trading-bot','report-writer','api-monitor'];
+  const tasks = ['Monitor ETH gas','Watch BTC price','Summarize daily P&L','Check API uptime'];
+  let i = 0;
+  const interval = setInterval(() => {
+    if(i >= roles.length) { clearInterval(interval); return; }
+    document.getElementById('spawn-role').value = roles[i];
+    document.getElementById('spawn-task').value = tasks[i];
+    spawnAgent();
+    i++;
+  }, 800);
+}
+
+// ════════════════════════════════════════
+// AUDIT LOG DEMO
+// ════════════════════════════════════════
+let auditEntries = [];
+let chainTampered = false;
+
+function fakeHash(input) {
+  // Deterministic fake hash from string
+  let h = 0;
+  for(let i=0;i<input.length;i++) h = (Math.imul(31,h)+input.charCodeAt(i))|0;
+  const hex = Math.abs(h).toString(16).padStart(8,'0');
+  return 'sha256:' + hex + hex + hex + hex.substring(0,8);
+}
+
+function initAudit() {
+  const rawEntries = [
+    {actor:'alice@corp',type:'human',action:'auth:login — Auth0 JWT validated'},
+    {actor:'agent-alpha',type:'agent',action:'agent:run — task=eth_balance_check'},
+    {actor:'agent-alpha',type:'agent',action:'blockchain:send — 0.1 ETH → 0x3fC9...'},
+    {actor:'alice@corp',type:'human',action:'hitl:approved — REQ-0001 (blockchain:send)'},
+    {actor:'api-key-xyz',type:'machine',action:'agent:run — task=market_analysis'},
+    {actor:'agent-beta',type:'agent',action:'banking:read — Plaid accounts fetched'},
+    {actor:'alice@corp',type:'human',action:'admin:permissions — grant agent-beta banking:read'},
+    {actor:'agent-alpha',type:'agent',action:'memory:write — stored analysis to SQLite'},
+  ];
+  let prevHash = 'sha256:0000000000000000000000000000000000000000000000000000000000000000';
+  auditEntries = rawEntries.map((e,i) => {
+    const payload = JSON.stringify({seq:i+1,actor:e.actor,action:e.action,ts:Date.now()-((8-i)*60000)});
+    const hash = fakeHash(payload + prevHash);
+    const entry = {seq:i+1,...e,ts:new Date(Date.now()-((8-i)*60000)),hash,prevHash,payload};
+    prevHash = hash;
+    return entry;
+  });
+  renderAudit();
+  renderChain();
+  document.getElementById('chain-depth').textContent = auditEntries.length;
+}
+
+function renderAudit() {
+  const rows = document.getElementById('audit-rows');
+  const filter = (document.getElementById('audit-filter')||{}).value||'';
+  rows.innerHTML = '';
+  auditEntries.filter(e => !filter || e.actor.includes(filter) || e.action.includes(filter)).forEach(e => {
+    const row = document.createElement('div');
+    row.className = 'audit-row';
+    const broken = e.tampered ? ' style="background:var(--red-dim)"' : '';
+    row.setAttribute('style', e.tampered ? 'background:var(--red-dim)' : '');
+    row.innerHTML = `<span class="a-time">${e.ts.toLocaleTimeString()}</span><span class="a-actor">${e.actor}</span><span class="a-action">${e.action}</span><span class="a-hash">${e.hash}</span>`;
+    rows.appendChild(row);
+  });
+}
+function renderChain() {
+  const viz = document.getElementById('chain-visual');
+  viz.innerHTML = '';
+  auditEntries.slice(-5).forEach((e,i,arr) => {
+    if(i>0) {
+      const arrow = document.createElement('div');
+      arrow.className = 'chain-arrow';
+      arrow.textContent = '←';
+      viz.appendChild(arrow);
+    }
+    const block = document.createElement('div');
+    block.className = 'chain-block' + (i===arr.length-1?' latest':'');
+    if(e.tampered) block.style.borderColor = 'var(--red)';
+    block.innerHTML = `<div class="chain-block-num">#${e.seq}</div><div class="chain-block-hash">hash: ${e.hash.substring(7,15)}...</div><div class="chain-block-prev">prev: ${e.prevHash.substring(7,15)}...</div>`;
+    viz.appendChild(block);
+  });
+}
+function addLogEntry() {
+  const actions = ['agent:run — new task dispatched','memory:read — context retrieved','blockchain:read — balance checked','mcp:tool_use — web_search called'];
+  const actors = ['agent-alpha','agent-beta','api-key-xyz','alice@corp'];
+  const action = actions[Math.floor(Math.random()*actions.length)];
+  const actor = actors[Math.floor(Math.random()*actors.length)];
+  const prevEntry = auditEntries[auditEntries.length-1];
+  const payload = JSON.stringify({seq:auditEntries.length+1,actor,action,ts:Date.now()});
+  const hash = fakeHash(payload + prevEntry.hash);
+  auditEntries.push({seq:auditEntries.length+1,actor,type:'agent',action,ts:new Date(),hash,prevHash:prevEntry.hash,payload});
+  renderAudit();
+  renderChain();
+  document.getElementById('chain-depth').textContent = auditEntries.length;
+}
+function tamperEntry() {
+  const target = parseInt(document.getElementById('tamper-target').value);
+  const entry = auditEntries.find(e => e.seq === target);
+  if(entry) {
+    entry.action = entry.action + ' [MODIFIED]';
+    entry.tampered = true;
+    document.getElementById('tamper-alert').classList.add('show');
+    document.getElementById('tamper-entry').textContent = target;
+    document.getElementById('chain-status-badge').textContent = '⚠ CHAIN BROKEN';
+    document.getElementById('chain-status-badge').className = 'badge badge-red';
+    renderAudit();
+    renderChain();
+  }
+}
+function resetChain() {
+  document.getElementById('tamper-alert').classList.remove('show');
+  document.getElementById('chain-status-badge').textContent = '✓ CHAIN INTACT';
+  document.getElementById('chain-status-badge').className = 'badge badge-green';
+  initAudit();
+}
+function verifyChain() {
+  const tampered = auditEntries.some(e => e.tampered);
+  if(tampered) {
+    document.getElementById('chain-status-badge').textContent = '⚠ CHAIN BROKEN';
+    document.getElementById('chain-status-badge').className = 'badge badge-red';
+    document.getElementById('tamper-alert').classList.add('show');
+  } else {
+    document.getElementById('chain-status-badge').textContent = '✓ CHAIN INTACT';
+    document.getElementById('chain-status-badge').className = 'badge badge-green';
+  }
+}
+function filterAudit() { renderAudit(); }
+function exportAudit() {
+  const csv = ['seq,timestamp,actor,action,hash'].concat(
+    auditEntries.map(e => `${e.seq},"${e.ts.toISOString()}","${e.actor}","${e.action}","${e.hash}"`)
+  ).join('\n');
+  const blob = new Blob([csv],{type:'text/csv'});
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = 'vaultagent-audit-' + Date.now() + '.csv';
+  a.click();
+}
+</script>
+</body>
+</html>
